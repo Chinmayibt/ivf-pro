@@ -16,6 +16,8 @@ def fallback_explanation(data: dict | None = None) -> dict:
         "key_drivers": [],
         "positive_factors": [],
         "negative_factors": [],
+        "personalized_diet": [],
+        "personalized_medication": [],
         "final_guidance": "",
     }
 
@@ -136,6 +138,12 @@ def _normalize(explanation: dict) -> dict:
         "negative_factors": _normalize_negative_factors(
             explanation.get("negative_factors", fallback["negative_factors"])
         ),
+        "personalized_diet": explanation.get("personalized_diet", fallback["personalized_diet"])
+        if isinstance(explanation.get("personalized_diet"), list)
+        else fallback["personalized_diet"],
+        "personalized_medication": explanation.get("personalized_medication", fallback["personalized_medication"])
+        if isinstance(explanation.get("personalized_medication"), list)
+        else fallback["personalized_medication"],
         "final_guidance": str(explanation.get("final_guidance", fallback["final_guidance"])),
     }
 
@@ -205,6 +213,12 @@ OUTPUT FORMAT (STRICT JSON):
       }}
     }}
   ],
+  "personalized_diet": [
+    "..."
+  ],
+  "personalized_medication": [
+    "..."
+  ],
   "final_guidance": "..."
 }}
 
@@ -253,6 +267,11 @@ This section must be detailed and useful.
 
 5. Final Guidance:
 Short, practical next steps.
+
+6. Personalized plan:
+- Provide 3-5 diet actions tailored to provided clinical profile
+- Provide 3-5 medication-adherence/support actions
+- Do not prescribe drug names/doses; keep to non-prescription adherence and clinical coordination guidance
 
 -------------------------------------
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   ArrowLeft,
@@ -21,10 +21,18 @@ import {
 } from 'lucide-react';
 import GraphView from './components/GraphView';
 import ResultCard from './components/ResultCard';
-import { getPrediction, getPredictionFromImage, getPredictionFromPdf } from './api';
+import {
+  createAppointment,
+  getAppointments,
+  getNotifications,
+  getPrediction,
+  getPredictionFromImage,
+  getPredictionFromPdf,
+  markNotificationRead,
+} from './api';
 import './App.css';
-
-const doctorPhoto = '/@fs/Users/btchinmayi/Projects/IVF/photos/fc318abcf86258657fabc1c8d97f61d7.jpg';
+import heroScrubsImage from '../../photos/image.png';
+import loginStethoscopeImage from '../../photos/image1.png';
 
 const fieldLabels = {
   age: 'Age',
@@ -64,22 +72,23 @@ const treatmentSteps = [
 ];
 
 const doctorSections = [
-  { id: 'manual', label: 'Manual IVF Prediction', icon: ClipboardList },
-  { id: 'clinical', label: 'Clinical Fields', icon: BarChart3 },
-  { id: 'report', label: 'Report Prediction', icon: FileText },
-  { id: 'image', label: 'Image Classification', icon: ImageIcon },
+  { id: 'manual', label: 'Narrative Cycle AI', icon: ClipboardList },
+  { id: 'clinical', label: 'Clinical Signal Matrix', icon: BarChart3 },
+  { id: 'report', label: 'Report Intelligence', icon: FileText },
+  { id: 'image', label: 'Embryo Image Lens', icon: ImageIcon },
   { id: 'tracker', label: 'Treatment Tracking', icon: CalendarDays },
   { id: 'recommendation', label: 'Diet + Med Recommendations', icon: Pill },
   { id: 'history', label: 'Patient Details + History', icon: UsersRound },
 ];
 
 const patientSections = [
-  { id: 'output', label: 'IVF Output Prediction', icon: HeartPulse },
-  { id: 'analysis', label: 'Report Analysis', icon: FileText },
+  { id: 'manual', label: 'Narrative Cycle AI', icon: ClipboardList },
+  { id: 'clinical', label: 'Clinical Signal Matrix', icon: BarChart3 },
+  { id: 'report', label: 'Report Intelligence', icon: FileText },
+  { id: 'image', label: 'Embryo Image Lens', icon: ImageIcon },
   { id: 'tracker', label: 'Tracker Calendar', icon: CalendarDays },
   { id: 'recommendation', label: 'Diet + Med Recommendations', icon: Pill },
-  { id: 'visualization', label: '3D Visualization', icon: Sparkles },
-  { id: 'doctor', label: 'Connect to Doctor', icon: Stethoscope },
+  { id: 'history', label: 'Patient Details + History', icon: UsersRound },
 ];
 
 const starterRecommendation = [
@@ -94,12 +103,21 @@ function App() {
   const [activePatientId, setActivePatientId] = useState(patientRoster[0].id);
   const [mode, setMode] = useState('manual');
   const [doctorSection, setDoctorSection] = useState('manual');
-  const [patientSection, setPatientSection] = useState('output');
+  const [patientSection, setPatientSection] = useState('manual');
+  const [patientSearch, setPatientSearch] = useState('');
   const [manualInput, setManualInput] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [structured, setStructured] = useState(initialStructured);
   const [result, setResult] = useState(null);
+  const [featureResults, setFeatureResults] = useState({
+    manual: null,
+    columns: null,
+    pdf: null,
+    image: null,
+  });
+  const [appointments, setAppointments] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [validatedRecommendation, setValidatedRecommendation] = useState(false);
@@ -122,6 +140,23 @@ function App() {
     return generated.length ? generated.slice(0, 5) : starterRecommendation;
   }, [result]);
 
+  useEffect(() => {
+    if (view !== 'doctor' && view !== 'patient') return;
+    const loadTrackerData = async () => {
+      try {
+        const [appointmentPayload, notificationPayload] = await Promise.all([
+          getAppointments(activePatientId),
+          getNotifications(activePatientId, false),
+        ]);
+        setAppointments(appointmentPayload.appointments || []);
+        setNotifications(notificationPayload.notifications || []);
+      } catch (_err) {
+        // Keep view interactive even when tracker APIs are unavailable.
+      }
+    };
+    loadTrackerData();
+  }, [view, activePatientId]);
+
   const openLogin = (role) => {
     setLoginRole(role);
     setView('login');
@@ -131,12 +166,13 @@ function App() {
     setLoading(true);
     setError('');
     try {
+      let nextResult = null;
       if (mode === 'manual') {
         if (!manualInput.trim()) {
           setError('Please enter patient details before running analysis.');
           return;
         }
-        setResult(await getPrediction(manualInput.trim()));
+        nextResult = await getPrediction(manualInput.trim());
       } else if (mode === 'columns') {
         const payload = {};
         Object.entries(structured).forEach(([key, value]) => {
@@ -146,19 +182,23 @@ function App() {
           setError('Please fill at least one clinical field.');
           return;
         }
-        setResult(await getPrediction(payload));
+        nextResult = await getPrediction(payload);
       } else if (mode === 'pdf') {
         if (!pdfFile) {
           setError('Please select a report PDF or text file.');
           return;
         }
-        setResult(await getPredictionFromPdf(pdfFile));
+        nextResult = await getPredictionFromPdf(pdfFile);
       } else if (mode === 'image') {
         if (!imageFile) {
           setError('Please upload an image for classification.');
           return;
         }
-        setResult(await getPredictionFromImage(imageFile));
+        nextResult = await getPredictionFromImage(imageFile);
+      }
+      if (nextResult) {
+        setResult(nextResult);
+        setFeatureResults((previous) => ({ ...previous, [mode]: nextResult }));
       }
       setValidatedRecommendation(false);
     } catch (err) {
@@ -168,15 +208,42 @@ function App() {
     }
   };
 
+  const goHome = () => setView('landing');
+  const openDoctor = () => openLogin('doctor');
+  const openPatient = () => openLogin('patient');
+  const openDoctorDashboard = () => {
+    setView('doctor');
+    setDoctorSection('manual');
+  };
+  const openPatientDashboard = () => {
+    setView('patient');
+    setPatientSection('manual');
+  };
+
+  const withNav = (content) => (
+    <>
+      <CommonNav
+        activeView={view}
+        activeLoginRole={loginRole}
+        onHome={goHome}
+        onDoctor={openDoctor}
+        onPatient={openPatient}
+        onDoctorDashboard={openDoctorDashboard}
+        onPatientDashboard={openPatientDashboard}
+      />
+      {content}
+    </>
+  );
+
   if (view === 'login') {
-    return (
+    return withNav(
       <LoginPage
         role={loginRole}
-        onBack={() => setView('landing')}
+        onBack={goHome}
         onLogin={() => {
           setView(loginRole);
           if (loginRole === 'doctor') setDoctorSection('manual');
-          else setPatientSection('output');
+          else setPatientSection('manual');
         }}
         onSwitchRole={() => setLoginRole((role) => (role === 'doctor' ? 'patient' : 'doctor'))}
       />
@@ -184,7 +251,7 @@ function App() {
   }
 
   if (view === 'doctor' || view === 'patient') {
-    return (
+    return withNav(
       <HospitalDashboard
         role={view}
         activePatient={activePatient}
@@ -200,9 +267,14 @@ function App() {
         probability={probability}
         recommendations={recommendations}
         result={result}
+        featureResults={featureResults}
+        appointments={appointments}
+        notifications={notifications}
+        patientSearch={patientSearch}
         setActivePatientId={setActivePatientId}
         setDoctorSection={setDoctorSection}
         setPatientSection={setPatientSection}
+        setPatientSearch={setPatientSearch}
         setImageFile={setImageFile}
         setManualInput={setManualInput}
         setMode={setMode}
@@ -210,94 +282,179 @@ function App() {
         setStructured={setStructured}
         setTrackingDone={setTrackingDone}
         setValidatedRecommendation={setValidatedRecommendation}
+        setAppointments={setAppointments}
+        setNotifications={setNotifications}
         structured={structured}
         trackingDone={trackingDone}
         validatedRecommendation={validatedRecommendation}
-        onBack={() => setView('landing')}
+        onBack={goHome}
         onRunPrediction={runPrediction}
       />
     );
   }
 
-  return <LandingPage onDoctor={() => openLogin('doctor')} onPatient={() => openLogin('patient')} />;
+  return withNav(<LandingPage onDoctor={openDoctor} onPatient={openPatient} />);
+}
+
+function CommonNav({ activeView, activeLoginRole, onHome, onDoctor, onPatient, onDoctorDashboard, onPatientDashboard }) {
+  const isLanding = activeView === 'landing';
+
+  return (
+    <nav className="common-nav">
+      <button className="common-brand" type="button" onClick={onHome}>
+        <span className="brand-mark-shape" />
+        <strong>Progena IVF</strong>
+      </button>
+      <div className="common-nav-links">
+        {isLanding ? (
+          <>
+            <a href="#about">About us</a>
+            <a href="#services">Our Services</a>
+            <a href="#steps">How it Works</a>
+            <button className="nav-login-btn" type="button" onClick={onDoctor}>Login</button>
+          </>
+        ) : (
+          <>
+            <button className={activeView === 'landing' ? 'active' : ''} type="button" onClick={onHome}>Home</button>
+            <button className={activeView === 'login' && activeLoginRole === 'doctor' ? 'active' : ''} type="button" onClick={onDoctor}>Doctor Login</button>
+            <button className={activeView === 'login' && activeLoginRole === 'patient' ? 'active' : ''} type="button" onClick={onPatient}>Patient Login</button>
+            <button className={activeView === 'doctor' ? 'active' : ''} type="button" onClick={onDoctorDashboard}>Doctor Dashboard</button>
+            <button className={activeView === 'patient' ? 'active' : ''} type="button" onClick={onPatientDashboard}>Patient Dashboard</button>
+          </>
+        )}
+      </div>
+    </nav>
+  );
 }
 
 function LandingPage({ onDoctor, onPatient }) {
   return (
-    <main className="landing-root">
-      <nav className="landing-nav">
-        <div className="logo-lockup">
-          <HeartPulse size={24} />
-          <strong>Progena IVF</strong>
-        </div>
-        <div className="landing-nav-actions">
-          <a href="#about">About</a>
-          <a href="#services">Services</a>
-          <button type="button" className="btn-outline" onClick={onDoctor}>Login</button>
-        </div>
-      </nav>
-
-      <section className="landing-hero">
-        <div className="hero-copy">
-          <span className="tag">Precision fertility platform</span>
-          <h1>Clinical IVF intelligence designed for doctors and patients.</h1>
-          <p>
-            Upload notes, reports, and images to generate IVF predictions, treatment pathways,
-            and doctor-validated recommendations in one focused workspace.
-          </p>
-          <div className="role-cards">
-            <button className="role-card" type="button" onClick={onDoctor}>
-              <Stethoscope size={22} />
-              <div>
-                <strong>Doctor View</strong>
-                <small>Prediction controls, validation workflow, patient records</small>
-              </div>
-              <ArrowRight size={16} />
-            </button>
-            <button className="role-card" type="button" onClick={onPatient}>
-              <UserRound size={22} />
-              <div>
-                <strong>Patient View</strong>
-                <small>Reports, tracking calendar, recommendations, doctor contact</small>
-              </div>
-              <ArrowRight size={16} />
-            </button>
+    <main className="wecare-stage">
+      <section className="wecare-page">
+        <section className="wecare-hero">
+          <div className="hero-copy">
+            <span className="mini-kicker">Fertility intelligence</span>
+            <h1>Find IVF insights that can guide every cycle.</h1>
+            <p>
+              Progena IVF helps doctors and patients move from raw reports to outcome prediction,
+              treatment tracking, graph reasoning, and validated care guidance.
+            </p>
+            <div className="role-cards">
+              <button className="role-card" type="button" onClick={onDoctor}>
+                <Stethoscope size={22} />
+                <div>
+                  <strong>Doctor View</strong>
+                  <small>Run predictions, validate recommendations, manage patient history.</small>
+                </div>
+                <ArrowRight size={16} />
+              </button>
+              <button className="role-card" type="button" onClick={onPatient}>
+                <UserRound size={22} />
+                <div>
+                  <strong>Patient View</strong>
+                  <small>Review reports, track treatment, connect with the doctor.</small>
+                </div>
+                <ArrowRight size={16} />
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="hero-photo-wrap">
-          <img src={doctorPhoto} alt="Doctor preparing sterile gloves" />
-        </div>
-      </section>
+          <HeroImagePanel />
+          <span className="decor decor-one" />
+          <span className="decor decor-two" />
+          <span className="decor decor-three" />
+        </section>
 
-      <section className="landing-section" id="about">
-        <h2>Built for end-to-end IVF decision support</h2>
-        <p>
-          The platform unifies manual input prediction, clinical-field prediction, report analysis,
-          image classification, treatment tracking, 3D visualization, and recommendation validation.
-        </p>
-      </section>
+        <section className="review-band" id="about">
+          <div className="review-visual">
+            <div className="doctor-abstract" />
+            <div className="review-card card-a">
+              <UserRound size={18} />
+              <span>Personalized IVF tracking</span>
+            </div>
+            <div className="review-card card-b">
+              <HeartPulse size={18} />
+              <span>Prediction output with explanation</span>
+            </div>
+          </div>
+          <div className="section-copy">
+            <span className="mini-kicker">User reviews</span>
+            <h2>Read the clearest IVF care pathway from one place.</h2>
+            <p>
+              Doctors can analyse manual notes, clinical fields, PDFs, and images. Patients see
+              only the reports and guidance that the doctor has reviewed.
+            </p>
+            <button className="btn-primary" type="button" onClick={onDoctor}>See specialist tools <ArrowRight size={14} /></button>
+          </div>
+        </section>
 
-      <section className="landing-services" id="services">
-        <ServiceTile icon={ClipboardList} title="Manual IVF Prediction" text="Capture detailed notes and run structured reasoning." />
-        <ServiceTile icon={BarChart3} title="Clinical Fields" text="Submit numeric and clinical fields directly to prediction." />
-        <ServiceTile icon={FileText} title="Report Prediction" text="Upload reports and extract probability with explanation." />
-        <ServiceTile icon={ImageIcon} title="Image Classification" text="Classify uploaded images with confidence and explanation." />
-      </section>
+        <section className="steps-section" id="steps">
+          <span className="mini-kicker">Fastest solution</span>
+          <h2>4 easy steps to get your IVF Solution</h2>
+          <div className="step-grid">
+            <StepCard icon={ClipboardList} title="Add patient data" text="Manual notes, clinical fields, report PDFs, or image files." />
+            <StepCard icon={BarChart3} title="Run prediction" text="Use the existing IVF model output and explanation layer." />
+            <StepCard icon={CalendarDays} title="Track treatment" text="Mark appointments and cycle milestones in the dashboard." />
+            <StepCard icon={ShieldCheck} title="Validate guidance" text="Doctor approves diet and medication recommendations." />
+          </div>
+        </section>
 
-      <footer className="landing-footer">
-        <div>
-          <strong>Progena IVF</strong>
-          <p>AI-assisted clinical fertility workflow for doctors and patients.</p>
-        </div>
-        <div>
-          <strong>Quick Links</strong>
-          <p>About · Services · Login · Support</p>
-        </div>
-        <div>
-          <strong>Contact</strong>
-          <p>support@progena.ai · +91 90000 00000</p>
-        </div>
-      </footer>
+        <section className="appointment-band">
+          <div className="section-copy">
+            <span className="mini-kicker">Book workflow</span>
+            <h2>Consult and track IVF progress anytime.</h2>
+            <p>
+              The dashboard keeps output prediction, report analysis, tracker calendar,
+              3D visualization, doctor details, and recommendations in one interactive flow.
+            </p>
+            <div className="bullet-list">
+              <span><CheckCircle2 size={16} /> Uniform doctor and patient experience</span>
+              <span><CheckCircle2 size={16} /> Doctor validated patient recommendations</span>
+            </div>
+            <button className="btn-primary" type="button" onClick={onPatient}>Open patient access <ArrowRight size={14} /></button>
+          </div>
+          <div className="calendar-card">
+            <div className="calendar-head">
+              <strong>February</strong>
+              <span>Cycle visits</span>
+            </div>
+            <div className="calendar-grid">
+              {Array.from({ length: 28 }, (_, index) => (
+                <button className={[7, 15, 18, 25].includes(index + 1) ? 'marked' : ''} key={index} type="button">
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="stats-band">
+          <StatCard value="850" label="Clinical signals" />
+          <StatCard value="30000+" label="Report fields ready" />
+          <StatCard value="98.4%" label="Interface confidence" />
+        </section>
+
+        <section className="landing-services" id="services">
+          <ServiceTile icon={ClipboardList} title="Narrative Cycle AI" text="Capture detailed notes and run structured reasoning." />
+          <ServiceTile icon={BarChart3} title="Clinical Signal Matrix" text="Submit numeric and clinical fields directly to prediction." />
+          <ServiceTile icon={FileText} title="Report Intelligence" text="Upload reports and extract probability with explanation." />
+          <ServiceTile icon={ImageIcon} title="Embryo Image Lens" text="Classify uploaded images with confidence and explanation." />
+        </section>
+
+        <footer className="landing-footer">
+          <div>
+            <strong>Progena IVF</strong>
+            <p>AI-assisted clinical fertility workflow for doctors and patients.</p>
+          </div>
+          <div>
+            <strong>Care Workflow</strong>
+            <p>Prediction | Analysis | Tracking | Validation</p>
+          </div>
+          <div>
+            <strong>Contact</strong>
+            <p>support@progena.ai | +91 90000 00000</p>
+          </div>
+        </footer>
+      </section>
     </main>
   );
 }
@@ -331,9 +488,7 @@ function LoginPage({ role, onBack, onLogin, onSwitchRole }) {
               </button>
             </div>
           </div>
-          <div className="login-photo-wrap">
-            <img src={doctorPhoto} alt="Clinical team visual" />
-          </div>
+          <LoginVisual />
         </div>
       </section>
     </main>
@@ -347,6 +502,7 @@ function HospitalDashboard(props) {
     activePatientId,
     doctorSection,
     patientSection,
+    patientSearch,
     error,
     imageFile,
     loading,
@@ -356,9 +512,13 @@ function HospitalDashboard(props) {
     probability,
     recommendations,
     result,
+    featureResults,
+    appointments,
+    notifications,
     setActivePatientId,
     setDoctorSection,
     setPatientSection,
+    setPatientSearch,
     setImageFile,
     setManualInput,
     setMode,
@@ -366,6 +526,8 @@ function HospitalDashboard(props) {
     setStructured,
     setTrackingDone,
     setValidatedRecommendation,
+    setAppointments,
+    setNotifications,
     structured,
     trackingDone,
     validatedRecommendation,
@@ -376,6 +538,11 @@ function HospitalDashboard(props) {
   const isDoctor = role === 'doctor';
   const sectionItems = isDoctor ? doctorSections : patientSections;
   const activeSection = isDoctor ? doctorSection : patientSection;
+  const filteredPatients = patientRoster.filter((patient) => {
+    const query = patientSearch.trim().toLowerCase();
+    if (!query) return true;
+    return `${patient.id} ${patient.name}`.toLowerCase().includes(query);
+  });
 
   return (
     <main className="dash-root">
@@ -404,6 +571,30 @@ function HospitalDashboard(props) {
             </button>
           ))}
         </div>
+        {isDoctor ? (
+          <div className="patient-search-block">
+            <label htmlFor="patient-search">Find patient by ID</label>
+            <input
+              id="patient-search"
+              value={patientSearch}
+              onChange={(event) => setPatientSearch(event.target.value)}
+              placeholder="Search P-1042"
+            />
+            <div className="sidebar-patient-results">
+              {filteredPatients.map((patient) => (
+                <button
+                  className={patient.id === activePatientId ? 'active' : ''}
+                  key={patient.id}
+                  type="button"
+                  onClick={() => setActivePatientId(patient.id)}
+                >
+                  <strong>{patient.id}</strong>
+                  <span>{patient.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <button className="btn-outline" type="button" onClick={onBack}>Back to Landing</button>
       </aside>
 
@@ -413,9 +604,7 @@ function HospitalDashboard(props) {
             <span className="tag">{isDoctor ? 'Doctor Dashboard' : 'Patient Dashboard'}</span>
             <h2>{isDoctor ? 'Clinical workflow control center' : `Welcome, ${activePatient.name}`}</h2>
           </div>
-          <div className="header-photo">
-            <img src={doctorPhoto} alt="Clinical context" />
-          </div>
+          <DashboardPulse result={result} probability={probability} isDoctor={isDoctor} />
         </header>
 
         {isDoctor ? (
@@ -431,28 +620,50 @@ function HospitalDashboard(props) {
             pdfFile={pdfFile}
             probability={probability}
             result={result}
-            setActivePatientId={setActivePatientId}
+            featureResults={featureResults}
+            appointments={appointments}
             setImageFile={setImageFile}
             setManualInput={setManualInput}
-            setMode={setMode}
             setPdfFile={setPdfFile}
             setStructured={setStructured}
             setTrackingDone={setTrackingDone}
             setValidatedRecommendation={setValidatedRecommendation}
+            setAppointments={setAppointments}
             structured={structured}
             trackingDone={trackingDone}
             validatedRecommendation={validatedRecommendation}
+            featureResults={featureResults}
+            appointments={appointments}
+            notifications={notifications}
+            setNotifications={setNotifications}
             onRunPrediction={onRunPrediction}
           />
         ) : (
           <PatientSectionView
             activeSection={activeSection}
             activePatient={activePatient}
+            activePatientId={activePatientId}
             probability={probability}
             recommendations={recommendations}
             result={result}
+            error={error}
+            imageFile={imageFile}
+            loading={loading}
+            manualInput={manualInput}
+            mode={mode}
+            pdfFile={pdfFile}
+            setImageFile={setImageFile}
+            setManualInput={setManualInput}
+            setPdfFile={setPdfFile}
+            setStructured={setStructured}
+            structured={structured}
             trackingDone={trackingDone}
             validatedRecommendation={validatedRecommendation}
+            featureResults={featureResults}
+            appointments={appointments}
+            notifications={notifications}
+            setNotifications={setNotifications}
+            onRunPrediction={onRunPrediction}
           />
         )}
       </section>
@@ -473,37 +684,25 @@ function DoctorSectionView(props) {
     pdfFile,
     probability,
     result,
-    setActivePatientId,
+    featureResults,
     setImageFile,
     setManualInput,
-    setMode,
     setPdfFile,
     setStructured,
     setTrackingDone,
     setValidatedRecommendation,
+    setAppointments,
     structured,
     trackingDone,
     validatedRecommendation,
+    appointments,
     onRunPrediction,
   } = props;
 
   if (['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
+    const modeResult = featureResults[mode] || result;
     return (
-      <div className="dash-grid">
-        <section className="panel">
-          <h3>Patient List</h3>
-          {patientRoster.map((patient) => (
-            <button
-              className={`patient-chip ${patient.id === activePatientId ? 'active' : ''}`}
-              key={patient.id}
-              type="button"
-              onClick={() => setActivePatientId(patient.id)}
-            >
-              <strong>{patient.name}</strong>
-              <small>{patient.id} · Age {patient.age} · {patient.stage}</small>
-            </button>
-          ))}
-        </section>
+      <div className="doctor-input-stack">
         <InputWorkspace
           error={error}
           imageFile={imageFile}
@@ -513,58 +712,136 @@ function DoctorSectionView(props) {
           pdfFile={pdfFile}
           setImageFile={setImageFile}
           setManualInput={setManualInput}
-          setMode={setMode}
           setPdfFile={setPdfFile}
           setStructured={setStructured}
           structured={structured}
           onRunPrediction={onRunPrediction}
         />
-        <ResultCard result={result} loading={loading} />
-        <section className="panel">
-          <h3>Prediction Snapshot</h3>
-          <p>Active patient: {activePatient.name}</p>
-          <p>Probability: {probability ? `${probability}%` : 'Pending'}</p>
-          <p>Section: {activeSection}</p>
-        </section>
+        <StructuredPredictionResult
+          activePatient={activePatient}
+          activeSection={activeSection}
+          imageFile={imageFile}
+          loading={loading}
+          manualInput={manualInput}
+          mode={mode}
+          pdfFile={pdfFile}
+          probability={probability}
+          result={modeResult}
+          structured={structured}
+        />
       </div>
     );
   }
 
   if (activeSection === 'tracker') {
-    return <TrackingPanel trackingDone={trackingDone} setTrackingDone={setTrackingDone} />;
+    return (
+      <TrackingPanel
+        trackingDone={trackingDone}
+        setTrackingDone={setTrackingDone}
+        appointments={appointments}
+        setAppointments={setAppointments}
+        activePatientId={activePatientId}
+      />
+    );
   }
 
   if (activeSection === 'recommendation') {
     return (
-      <div className="dash-grid">
-        <ValidationPanel result={result} validatedRecommendation={validatedRecommendation} setValidatedRecommendation={setValidatedRecommendation} />
-        <PatientRecommendation validated={validatedRecommendation} recommendations={result ? (result.explanation?.key_drivers || []) : starterRecommendation} />
-      </div>
+      <PatientRecommendation
+        validated={validatedRecommendation}
+        recommendations={result ? (result.explanation?.key_drivers || []) : starterRecommendation}
+        dietItems={result?.explanation?.personalized_diet || []}
+        medicationItems={result?.explanation?.personalized_medication || []}
+        canValidate
+        hasResult={Boolean(result)}
+        onValidate={() => setValidatedRecommendation((value) => !value)}
+      />
     );
   }
 
   return <PatientHistoryCard activePatient={activePatient} />;
 }
 
-function PatientSectionView({ activeSection, activePatient, probability, recommendations, result, trackingDone, validatedRecommendation }) {
-  if (activeSection === 'output') {
+function PatientSectionView(props) {
+  const {
+    activeSection,
+    activePatient,
+    activePatientId,
+    probability,
+    recommendations,
+    result,
+    error,
+    imageFile,
+    loading,
+    manualInput,
+    mode,
+    pdfFile,
+    setImageFile,
+    setManualInput,
+    setPdfFile,
+    setStructured,
+    structured,
+    trackingDone,
+    validatedRecommendation,
+    featureResults,
+    appointments,
+    notifications,
+    setNotifications,
+    onRunPrediction,
+  } = props;
+
+  if (['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
+    const modeResult = featureResults[mode] || result;
     return (
-      <div className="dash-grid">
-        <ResultCard result={result} loading={false} />
-        <section className="panel">
-          <h3>IVF Output Prediction</h3>
-          <p>Patient: {activePatient.name}</p>
-          <p>Cycle status: {activePatient.stage}</p>
-          <p>Prediction confidence: {probability ? `${probability}%` : 'Awaiting doctor analysis'}</p>
-        </section>
+      <div className="doctor-input-stack">
+        <InputWorkspace
+          error={error}
+          imageFile={imageFile}
+          loading={loading}
+          manualInput={manualInput}
+          mode={mode}
+          pdfFile={pdfFile}
+          setImageFile={setImageFile}
+          setManualInput={setManualInput}
+          setPdfFile={setPdfFile}
+          setStructured={setStructured}
+          structured={structured}
+          onRunPrediction={onRunPrediction}
+        />
+        <StructuredPredictionResult
+          activePatient={activePatient}
+          imageFile={imageFile}
+          loading={loading}
+          mode={mode}
+          probability={probability}
+          result={modeResult}
+        />
       </div>
     );
   }
 
-  if (activeSection === 'analysis') return <ReportViewer result={result} />;
-  if (activeSection === 'tracker') return <TreatmentTimeline done={trackingDone} />;
-  if (activeSection === 'recommendation') return <PatientRecommendation validated={validatedRecommendation} recommendations={recommendations} />;
-  if (activeSection === 'visualization') return <ClinicalVisualization result={result} probability={probability} />;
+  if (activeSection === 'tracker') {
+    return (
+      <PatientTrackerQueryPanel
+        done={trackingDone}
+        appointments={appointments}
+        notifications={notifications}
+        activePatientId={activePatientId}
+        setNotifications={setNotifications}
+      />
+    );
+  }
+  if (activeSection === 'recommendation') {
+    return (
+      <PatientRecommendation
+        validated={validatedRecommendation}
+        recommendations={recommendations}
+        dietItems={result?.explanation?.personalized_diet || []}
+        medicationItems={result?.explanation?.personalized_medication || []}
+      />
+    );
+  }
+  if (activeSection === 'history') return <PatientHistoryCard activePatient={activePatient} patientId={activePatientId} />;
   return <ConnectDoctorCard />;
 }
 
@@ -578,30 +855,15 @@ function InputWorkspace(props) {
     pdfFile,
     setImageFile,
     setManualInput,
-    setMode,
     setPdfFile,
     setStructured,
     structured,
     onRunPrediction,
   } = props;
 
-  const modes = [
-    ['manual', 'Manual', ClipboardList],
-    ['columns', 'Clinical fields', BarChart3],
-    ['pdf', 'Report prediction', FileText],
-    ['image', 'Image classification', ImageIcon],
-  ];
-
   return (
-    <section className="panel">
-      <h3>Prediction Input Workspace</h3>
-      <div className="tabs">
-        {modes.map(([key, label, Icon]) => (
-          <button className={mode === key ? 'active' : ''} key={key} type="button" onClick={() => setMode(key)}>
-            <Icon size={14} /> {label}
-          </button>
-        ))}
-      </div>
+    <section className="panel compact-panel">
+      <h3>{modeTitle(mode)}</h3>
 
       {mode === 'manual' && (
         <textarea
@@ -640,6 +902,81 @@ function InputWorkspace(props) {
   );
 }
 
+function modeTitle(mode) {
+  if (mode === 'columns') return 'Clinical Signal Input';
+  if (mode === 'pdf') return 'Report Intelligence Upload';
+  if (mode === 'image') return 'Embryo Image Lens Upload';
+  return 'Narrative Cycle Input';
+}
+
+function StructuredPredictionResult({ imageFile, loading, mode, probability, result }) {
+  const probabilityValue = typeof result?.probability === 'number' ? Math.round(result.probability * 100) : probability;
+  return (
+    <section className="panel feature-result-stack">
+      <div className="feature-result-topline">
+        <h3>Feature Prediction Result</h3>
+        <span>{probabilityValue ? `${probabilityValue}%` : 'Pending'}</span>
+      </div>
+      {mode === 'image' ? (
+        <ImageClassificationView result={result} imageFile={imageFile} loading={loading} />
+      ) : (
+        <ResultCard result={result} loading={loading} />
+      )}
+      <GraphView graphData={result?.graph} riskPaths={result?.risk_paths} criticalPath={result?.critical_path} explanation={result?.explanation} />
+    </section>
+  );
+}
+
+function ImageClassificationView({ result, imageFile, loading }) {
+  if (loading) return <div className="result-card">Running image classification...</div>;
+  if (!result) return <div className="result-card">Upload an image and run analysis to see classification output.</div>;
+
+  const probabilityPct = typeof result.probability === 'number'
+    ? `${(result.probability * 100).toFixed(1)}%`
+    : result.probability || 'Not available';
+
+  const explanation = typeof result.explanation === 'string'
+    ? result.explanation
+    : result.explanation?.summary || 'No explanation available.';
+
+  const uploadedPreview = imageFile ? URL.createObjectURL(imageFile) : null;
+
+  return (
+    <div className="result-card">
+      <h2>Image Classification Result</h2>
+      <div className="meta">
+        <div><strong>Prediction:</strong> {result.prediction}</div>
+        <div><strong>Probability:</strong> {probabilityPct}</div>
+        <div><strong>Confidence:</strong> {result.confidence}</div>
+      </div>
+      <div className="image-compare-grid">
+        <div>
+          <strong>Original image</strong>
+          {result.original_image ? (
+            <img src={result.original_image} alt="Uploaded original" />
+          ) : uploadedPreview ? (
+            <img src={uploadedPreview} alt="Uploaded original preview" />
+          ) : (
+            <p>No original image preview available.</p>
+          )}
+        </div>
+        <div>
+          <strong>Grad-CAM heatmap</strong>
+          {result.gradcam_image ? (
+            <img src={result.gradcam_image} alt="Grad-CAM overlay" />
+          ) : (
+            <p>{result.gradcam_fallback || 'Grad-CAM image is unavailable in this environment.'}</p>
+          )}
+        </div>
+      </div>
+      <div className="block">
+        <h3>Explanation</h3>
+        <p>{explanation}</p>
+      </div>
+    </div>
+  );
+}
+
 function FileDrop({ accept, file, icon: Icon, label, onChange }) {
   return (
     <label className="file-drop">
@@ -652,10 +989,40 @@ function FileDrop({ accept, file, icon: Icon, label, onChange }) {
   );
 }
 
-function TrackingPanel({ trackingDone, setTrackingDone }) {
+function TrackingPanel({ trackingDone, setTrackingDone, appointments, setAppointments, activePatientId }) {
+  const [form, setForm] = useState({
+    title: 'Follicle monitoring scan',
+    date: '',
+    time: '',
+    note: '',
+  });
+  const [message, setMessage] = useState('');
+
+  const schedule = async () => {
+    if (!form.date || !form.time) {
+      setMessage('Please pick date and time for appointment.');
+      return;
+    }
+    try {
+      const payload = await createAppointment({
+        patient_id: activePatientId,
+        title: form.title,
+        date: form.date,
+        time: form.time,
+        note: form.note,
+      });
+      setAppointments((previous) => [...previous, payload.appointment]);
+      setMessage('Appointment scheduled and patient notified.');
+      setForm((previous) => ({ ...previous, note: '' }));
+    } catch (err) {
+      setMessage(err.message || 'Failed to schedule appointment.');
+    }
+  };
+
   return (
-    <section className="panel">
+    <section className="panel compact-panel">
       <h3>Treatment Tracking Calendar</h3>
+      <p>Plan and publish patient appointments from this section.</p>
       <div className="timeline">
         {treatmentSteps.map((step, index) => (
           <button className={index < trackingDone ? 'done' : ''} key={step} type="button" onClick={() => setTrackingDone(index + 1)}>
@@ -663,35 +1030,64 @@ function TrackingPanel({ trackingDone, setTrackingDone }) {
           </button>
         ))}
       </div>
+      <div className="calendar-form-grid">
+        <label>
+          Appointment
+          <input value={form.title} onChange={(event) => setForm((p) => ({ ...p, title: event.target.value }))} />
+        </label>
+        <label>
+          Date
+          <input type="date" value={form.date} onChange={(event) => setForm((p) => ({ ...p, date: event.target.value }))} />
+        </label>
+        <label>
+          Time
+          <input type="time" value={form.time} onChange={(event) => setForm((p) => ({ ...p, time: event.target.value }))} />
+        </label>
+        <label>
+          Note
+          <input value={form.note} onChange={(event) => setForm((p) => ({ ...p, note: event.target.value }))} placeholder="Optional note" />
+        </label>
+      </div>
+      <button className="btn-primary" type="button" onClick={schedule}>Schedule Next Appointment</button>
+      {message ? <p className="request-status">{message}</p> : null}
+      <div className="appointment-list">
+        {appointments.map((item) => (
+          <span key={item.id}>{item.date} {item.time} - {item.title}</span>
+        ))}
+      </div>
     </section>
   );
 }
 
-function ValidationPanel({ result, validatedRecommendation, setValidatedRecommendation }) {
+function PatientRecommendation({ validated, recommendations, dietItems = [], medicationItems = [], canValidate = false, hasResult = false, onValidate }) {
   return (
-    <section className="panel">
-      <h3>Doctor Validation</h3>
-      <p>Diet and medication recommendations are generated by the model and released only after doctor validation.</p>
-      <button
-        className={validatedRecommendation ? 'btn-outline' : 'btn-primary'}
-        type="button"
-        disabled={!result}
-        onClick={() => setValidatedRecommendation((value) => !value)}
-      >
-        {validatedRecommendation ? 'Validated for patient view' : 'Validate Recommendations'}
-      </button>
-    </section>
-  );
-}
-
-function PatientRecommendation({ validated, recommendations }) {
-  return (
-    <section className="panel">
+    <section className="panel compact-panel">
       <h3>Diet and Med Recommendations</h3>
+      {canValidate ? (
+        <button className="btn-primary" type="button" disabled={!hasResult} onClick={onValidate}>
+          {validated ? 'Recommendations Validated' : 'Validate Recommendations'}
+        </button>
+      ) : null}
       {validated ? (
-        <ul className="recommendations">
-          {recommendations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
-        </ul>
+        <>
+          <ul className="recommendations">
+            {recommendations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+          </ul>
+          <div className="recommendation-split">
+            <div>
+              <h4>Personalized Diet</h4>
+              <ul className="recommendations">
+                {(dietItems.length ? dietItems : ['Diet plan will appear after prediction.']).map((item, index) => <li key={`diet-${index}`}>{item}</li>)}
+              </ul>
+            </div>
+            <div>
+              <h4>Medication Guidance</h4>
+              <ul className="recommendations">
+                {(medicationItems.length ? medicationItems : ['Medication guidance will appear after prediction.']).map((item, index) => <li key={`med-${index}`}>{item}</li>)}
+              </ul>
+            </div>
+          </div>
+        </>
       ) : (
         <div className="locked">
           <LockKeyhole size={24} />
@@ -704,7 +1100,7 @@ function PatientRecommendation({ validated, recommendations }) {
 
 function ReportViewer({ result }) {
   return (
-    <section className="panel">
+    <section className="panel compact-panel">
       <h3>Report Analysis</h3>
       <p>{result?.explanation?.summary || 'Your analysed report will appear after doctor review.'}</p>
       <GraphView graphData={result?.graph} riskPaths={result?.risk_paths} criticalPath={result?.critical_path} explanation={result?.explanation} />
@@ -714,7 +1110,7 @@ function ReportViewer({ result }) {
 
 function TreatmentTimeline({ done }) {
   return (
-    <section className="panel">
+    <section className="panel compact-panel">
       <h3>Tracker Calendar</h3>
       <div className="timeline readonly">
         {treatmentSteps.map((step, index) => (
@@ -727,22 +1123,85 @@ function TreatmentTimeline({ done }) {
   );
 }
 
+function PatientTrackerQueryPanel({ done, appointments, notifications, activePatientId, setNotifications }) {
+  const [query, setQuery] = useState('');
+  const [sent, setSent] = useState(false);
+
+  const sendQuery = () => {
+    if (!query.trim()) return;
+    setSent(true);
+    setQuery('');
+  };
+
+  const markRead = async (notificationId) => {
+    try {
+      await markNotificationRead(activePatientId, notificationId);
+      setNotifications((previous) =>
+        previous.map((item) => (item.id === notificationId ? { ...item, is_read: true } : item))
+      );
+    } catch (_err) {
+      // Keep UI responsive if network call fails.
+    }
+  };
+
+  return (
+    <section className="panel">
+      <h3>Tracker and Doctor Appointments</h3>
+      <p>Your doctor plans appointments here. You can send cycle-related queries.</p>
+      <div className="timeline readonly">
+        {treatmentSteps.map((step, index) => (
+          <div className={index < done ? 'done' : ''} key={step}>
+            <CheckCircle2 size={16} /> {step}
+          </div>
+        ))}
+      </div>
+      <div className="appointment-list">
+        {appointments.length ? appointments.map((item) => (
+          <span key={item.id}>{item.date} {item.time} - {item.title}</span>
+        )) : <span>No doctor appointments scheduled yet.</span>}
+      </div>
+      <div className="notification-list">
+        {(notifications || []).slice(0, 5).map((item) => (
+          <button key={item.id} type="button" className={item.is_read ? 'is-read' : ''} onClick={() => markRead(item.id)}>
+            {item.message}
+          </button>
+        ))}
+      </div>
+      <div className="patient-query-box">
+        <textarea
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          rows={3}
+          placeholder="Ask your doctor: symptoms, medication doubts, appointment questions..."
+        />
+        <button className="btn-primary" type="button" onClick={sendQuery}>Send Query</button>
+      </div>
+      {sent ? <p className="request-status">Query sent to your doctor.</p> : null}
+    </section>
+  );
+}
+
 function ClinicalVisualization({ probability, result }) {
   return (
     <section className="panel">
       <h3>3D Visualization</h3>
-      <div className="viz-core">{probability ? `${probability}%` : 'AI'}</div>
+      <div className="viz-orbit">
+        <span />
+        <span />
+        <span />
+        <div className="viz-core">{probability ? `${probability}%` : 'AI'}</div>
+      </div>
       <p>{result ? 'Readiness is mapped from prediction and risk pathways.' : 'Run an analysis for visualization context.'}</p>
     </section>
   );
 }
 
-function PatientHistoryCard({ activePatient }) {
+function PatientHistoryCard({ activePatient, patientId }) {
   return (
     <section className="panel">
       <h3>Patient Details and Medical History</h3>
       <p>Name: {activePatient.name}</p>
-      <p>Patient ID: {activePatient.id}</p>
+      <p>Patient ID: {patientId || activePatient.id}</p>
       <p>Age: {activePatient.age}</p>
       <p>Current stage: {activePatient.stage}</p>
       <p>Risk status: {activePatient.risk}</p>
@@ -752,13 +1211,21 @@ function PatientHistoryCard({ activePatient }) {
 }
 
 function ConnectDoctorCard() {
+  const [requested, setRequested] = useState(false);
+
+  const handleRequest = () => {
+    setRequested(true);
+    window.location.href = 'mailto:doctor@progena.ai?subject=IVF Consultation Request';
+  };
+
   return (
     <section className="panel">
       <h3>Connect to Doctor</h3>
-      <p>Dr. Neri Kwang · Fertility Specialist</p>
-      <p>Availability: Mon-Sat · 10:00 AM to 5:00 PM</p>
+      <p>Dr. Neri Kwang | Fertility Specialist</p>
+      <p>Availability: Mon-Sat | 10:00 AM to 5:00 PM</p>
       <p>Next appointment sync is shown in your tracker calendar after doctor updates.</p>
-      <button className="btn-primary" type="button">Request Consultation</button>
+      <button className="btn-primary" type="button" onClick={handleRequest}>Request Consultation</button>
+      {requested ? <p className="request-status">Request sent. Your mail app was opened for confirmation.</p> : null}
     </section>
   );
 }
@@ -770,6 +1237,106 @@ function ServiceTile({ icon: Icon, title, text }) {
       <h3>{title}</h3>
       <p>{text}</p>
     </article>
+  );
+}
+
+function StepCard({ icon: Icon, title, text }) {
+  return (
+    <article className="step-card">
+      <span><Icon size={22} /></span>
+      <h3>{title}</h3>
+      <p>{text}</p>
+    </article>
+  );
+}
+
+function StatCard({ value, label }) {
+  return (
+    <article className="stat-card">
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </article>
+  );
+}
+
+function InteractiveHeroPanel() {
+  return (
+    <div className="hero-visual" aria-label="Interactive IVF dashboard preview">
+      <div className="hero-monitor">
+        <div className="monitor-top">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="monitor-grid">
+          <div className="mini-chart">
+            {[42, 68, 52, 82, 61, 74, 48, 88].map((height, index) => (
+              <i style={{ height: `${height}%` }} key={index} />
+            ))}
+          </div>
+          <div className="embryo-map">
+            <span />
+            <span />
+            <span />
+            <strong>IVF</strong>
+          </div>
+          <div className="signal-list">
+            <em />
+            <em />
+            <em />
+          </div>
+        </div>
+      </div>
+      <div className="floating-control control-a"><FileText size={18} /> Report analysis</div>
+      <div className="floating-control control-b"><ShieldCheck size={18} /> Doctor validation</div>
+      <div className="floating-control control-c"><CalendarDays size={18} /> Cycle tracker</div>
+    </div>
+  );
+}
+
+function HeroImagePanel() {
+  return (
+    <div className="hero-image-panel">
+      <img src={heroScrubsImage} alt="Clinical IVF care specialist with stethoscope" />
+      <div className="hero-image-card image-card-top">
+        <ShieldCheck size={18} />
+        <span>
+          <strong>Doctor validated</strong>
+          <small>Guidance released after review</small>
+        </span>
+      </div>
+      <div className="hero-image-card image-card-bottom">
+        <HeartPulse size={18} />
+        <span>
+          <strong>IVF prediction</strong>
+          <small>Reports, fields, and cycle tracking</small>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LoginVisual() {
+  return (
+    <div className="login-visual" aria-label="Secure medical login visual">
+      <img className="login-scrubs-image" src={loginStethoscopeImage} alt="Stethoscope on a clinical document" />
+      <div className="login-image-shade" />
+      <div className="login-data-card">
+        <HeartPulse size={20} />
+        <strong>Encrypted fertility workspace</strong>
+        <small>Prediction, reports, tracking, and validation stay role-gated.</small>
+      </div>
+    </div>
+  );
+}
+
+function DashboardPulse({ result, probability, isDoctor }) {
+  return (
+    <div className="dashboard-pulse" aria-label="Dashboard status visual">
+      <div className="role-status-icon">{isDoctor ? <Stethoscope size={24} /> : <UserRound size={24} />}</div>
+      <strong>{isDoctor ? 'Doctor workspace' : 'Patient workspace'}</strong>
+      <small>{result ? 'Analysis ready' : 'Awaiting analysis'}</small>
+    </div>
   );
 }
 

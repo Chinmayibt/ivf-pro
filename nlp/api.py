@@ -8,6 +8,12 @@ from pydantic import BaseModel
 
 from nlp.predict_pipeline import predict, graph as pipeline_graph
 from nlp.image_predictor import get_image_predictor
+from nlp.appointments import (
+    create_appointment,
+    list_appointments,
+    list_notifications,
+    mark_notification_read,
+)
 
 
 app = FastAPI(title="IVF Prediction API")
@@ -23,6 +29,19 @@ app.add_middleware(
 
 class PredictRequest(BaseModel):
     input: Union[str, Dict[str, Any]]
+
+
+class AppointmentCreateRequest(BaseModel):
+    patient_id: str
+    title: str
+    date: str
+    time: str
+    note: str = ""
+
+
+class NotificationReadRequest(BaseModel):
+    patient_id: str
+    notification_id: int
 
 
 def _build_api_response(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -42,6 +61,8 @@ def _build_api_response(result: Dict[str, Any]) -> Dict[str, Any]:
             "key_drivers": explanation.get("key_drivers", []),
             "positive_factors": explanation.get("positive_factors", []),
             "negative_factors": explanation.get("negative_factors", []),
+            "personalized_diet": explanation.get("personalized_diet", []),
+            "personalized_medication": explanation.get("personalized_medication", []),
             "final_guidance": explanation.get("final_guidance", ""),
         },
         "graph": {
@@ -101,5 +122,45 @@ async def predict_image(file: UploadFile = File(...)):
         return predictor.predict_image_bytes(content)
     except HTTPException:
         raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/appointments")
+def get_appointments(patient_id: str | None = None):
+    return {"appointments": list_appointments(patient_id=patient_id)}
+
+
+@app.post("/appointments")
+def post_appointment(payload: AppointmentCreateRequest):
+    try:
+        appointment = create_appointment(
+            patient_id=payload.patient_id,
+            title=payload.title,
+            date=payload.date,
+            time=payload.time,
+            note=payload.note,
+            created_by="doctor",
+        )
+        return {"appointment": appointment}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/notifications")
+def get_notifications(patient_id: str, unread_only: bool = False):
+    return {"notifications": list_notifications(patient_id=patient_id, unread_only=unread_only)}
+
+
+@app.post("/notifications/read")
+def post_notification_read(payload: NotificationReadRequest):
+    try:
+        item = mark_notification_read(
+            notification_id=payload.notification_id,
+            patient_id=payload.patient_id,
+        )
+        return {"notification": item}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

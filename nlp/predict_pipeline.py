@@ -678,6 +678,16 @@ def _to_rule_based_payload(explanation: ExplanationResult, prob: float) -> dict:
             for f in explanation.positive_factors
         ],
         "negative_factors": detailed_negatives,
+        "personalized_diet": [
+            "Follow a protein-forward plate with iron-rich foods and hydration targets.",
+            "Use low-glycemic meals with high-fiber vegetables to stabilize hormone response.",
+            "Avoid excess processed sugar and trans-fat foods during stimulation and transfer windows.",
+        ],
+        "personalized_medication": [
+            "Take fertility medications at the same time daily and log each dose.",
+            "Set reminder alarms and report any missed dose to the care team promptly.",
+            "Bring your medication log to each appointment for protocol adjustment.",
+        ],
         "final_guidance": "",
     }
 
@@ -834,6 +844,10 @@ def predict(source):
 
     llm_output = generate_llm_explanation(llm_input)
     explanation = llm_output if isinstance(llm_output, dict) else rule_based_payload
+    if not explanation.get("personalized_diet"):
+        explanation["personalized_diet"] = rule_based_payload["personalized_diet"]
+    if not explanation.get("personalized_medication"):
+        explanation["personalized_medication"] = rule_based_payload["personalized_medication"]
 
     # ----------------------------
     # KNOWLEDGE GRAPH INTEGRATION
