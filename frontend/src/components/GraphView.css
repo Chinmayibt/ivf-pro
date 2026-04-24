@@ -1,8 +1,8 @@
 .graph-view-wrap {
-  background: linear-gradient(180deg, #1B263B 0%, #233653 100%);
+  background: linear-gradient(180deg, #0A344A 0%, #0F6B8E 100%);
   border-radius: var(--radius-lg);
-  box-shadow: 0 16px 42px rgba(27, 38, 59, 0.24);
-  border: 1px solid rgba(217, 234, 253, 0.24);
+  box-shadow: 0 16px 42px rgba(10, 52, 74, 0.24);
+  border: 1px solid rgba(207, 231, 227, 0.36);
   padding: 1rem;
   color: #e8edf9;
   min-height: 240px;
@@ -16,7 +16,7 @@
 .graph-node-popup {
   margin-top: 0.8rem;
   border: 1px solid rgba(142, 164, 223, 0.3);
-  background: #253A58;
+  background: #0d4961;
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.75rem;
   color: #dbe4fb;
@@ -27,10 +27,10 @@
 }
 
 .graph-view-empty {
-  background: linear-gradient(180deg, #1B263B 0%, #233653 100%);
+  background: linear-gradient(180deg, #0A344A 0%, #0F6B8E 100%);
   border-radius: var(--radius-lg);
-  box-shadow: 0 16px 42px rgba(27, 38, 59, 0.24);
-  border: 1px solid rgba(217, 234, 253, 0.24);
+  box-shadow: 0 16px 42px rgba(10, 52, 74, 0.24);
+  border: 1px solid rgba(207, 231, 227, 0.36);
   padding: 1rem;
   color: #c2cdea;
 }

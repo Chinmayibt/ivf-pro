@@ -10,25 +10,25 @@
 
 :root {
   /* Medical color palette */
-  --deep-navy: #1B263B;
-  --steel-blue: #415A77;
-  --soft-ice: #F0F4F8;
-  --fertility-orange: #F18F01;
-  --cloud-blue: #D9EAFD;
+  --deep-navy: #0A344A;
+  --steel-blue: #0F6B8E;
+  --soft-ice: #EEFaf8;
+  --fertility-orange: #00A99D;
+  --cloud-blue: #E4F8F5;
 
-  --blush-primary: #D9EAFD;
-  --blush-light: #F0F4F8;
-  --blush-deep: #415A77;
-  --blush-muted: #D9EAFD;
+  --blush-primary: #CFE7E3;
+  --blush-light: #E4F8F5;
+  --blush-deep: #007C76;
+  --blush-muted: #D7F3EF;
 
-  --cream: #F0F4F8;
-  --cream-warm: #F8FBFF;
-  --cream-deep: #D9EAFD;
+  --cream: #EEFaf8;
+  --cream-warm: #F7FFFD;
+  --cream-deep: #D7F3EF;
 
-  --navy-deep: #1B263B;
-  --navy-mid: #415A77;
-  --navy-soft: #5B7898;
-  --navy-text: #1B263B;
+  --navy-deep: #0A344A;
+  --navy-mid: #0F6B8E;
+  --navy-soft: #00A99D;
+  --navy-text: #0D2F3C;
 
   --sage: #8BA89B;
   --sage-light: #C4D5CE;
@@ -36,12 +36,12 @@
   --gold-light: #E8D5B0;
 
   --white: #FFFFFF;
-  --gray-soft: #D9EAFD;
-  --gray-mid: #8293A8;
-  --gray-dark: #415A77;
+  --gray-soft: #CFE7E3;
+  --gray-mid: #7FA7A2;
+  --gray-dark: #58747B;
 
   /* Typography */
-  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-serif: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Spacing */

@@ -86,11 +86,11 @@ const GraphView = ({ graphData, riskPaths, criticalPath, explanation }) => {
             style: {
               'background-color': (ele) => {
                 const id = ele.data('id');
-                if ((criticalPath || []).includes(id)) return '#F18F01';
-                if (id.includes('Success')) return '#2E7D62';
+                if ((criticalPath || []).includes(id)) return '#00A99D';
+                if (id.includes('Success')) return '#00A77F';
                 if (id.includes('Low') || id.includes('Risk')) return '#B42318';
-                if (id.includes('Embryo') || id.includes('Egg')) return '#F18F01';
-                return '#415A77';
+                if (id.includes('Embryo') || id.includes('Egg')) return '#0F6B8E';
+                return '#007C76';
               },
               label: 'data(label)',
               'font-size': '11px',
@@ -112,7 +112,7 @@ const GraphView = ({ graphData, riskPaths, criticalPath, explanation }) => {
             },
           },
           { selector: '.edge-risk', style: { 'line-color': '#B42318', 'target-arrow-color': '#B42318' } },
-          { selector: '.edge-critical', style: { 'line-color': '#F18F01', 'target-arrow-color': '#F18F01' } },
+          { selector: '.edge-critical', style: { 'line-color': '#00A99D', 'target-arrow-color': '#00A99D' } },
         ]}
         cy={(cy) => {
           cy.removeAllListeners('tap');

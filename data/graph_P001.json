@@ -162,8 +162,8 @@
     {
       "label": "Patient",
       "patient_id": "P001",
-      "predicted_prob": 0.5175,
-      "timestamp": "2026-04-24T22:54:48.796781",
+      "predicted_prob": 0.3304,
+      "timestamp": "2026-04-25T00:45:47.686317",
       "id": "Patient:P001"
     }
   ],
@@ -434,7 +434,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 5.5,
+      "value": 0.6,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -442,11 +442,67 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 30.0,
+      "value": 35.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
       "target": "Age"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 23.4,
+      "weight": 1.0,
+      "inv_weight": 0.0,
+      "source": "Patient:P001",
+      "target": "BMI"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 7.2,
+      "weight": 1.0,
+      "inv_weight": 0.0,
+      "source": "Patient:P001",
+      "target": "Endometrial Thickness"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 1.0,
+      "weight": 1.0,
+      "inv_weight": 0.0,
+      "source": "Patient:P001",
+      "target": "Embryo Grade"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "high",
+      "weight": 1.0,
+      "inv_weight": 0.0,
+      "source": "Patient:P001",
+      "target": "Poor Embryo Quality"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "moderate",
+      "weight": 0.6,
+      "inv_weight": 0.4,
+      "source": "Patient:P001",
+      "target": "Low Ovarian Reserve"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "low",
+      "weight": 0.3,
+      "inv_weight": 0.7,
+      "source": "Patient:P001",
+      "target": "Thin Endometrium"
+    },
+    {
+      "relationship": "PREDICTED",
+      "probability": 0.3304,
+      "weight": 0.33043010751744234,
+      "inv_weight": 0.6695698924825577,
+      "source": "Patient:P001",
+      "target": "IVF Success"
     },
     {
       "relationship": "HAS_FACTOR",
@@ -457,44 +513,12 @@
       "target": "FSH"
     },
     {
-      "relationship": "HAS_FACTOR",
-      "value": 31.0,
-      "weight": 1.0,
-      "inv_weight": 0.0,
-      "source": "Patient:P001",
-      "target": "BMI"
-    },
-    {
-      "relationship": "HAS_FACTOR",
-      "value": 9.0,
-      "weight": 1.0,
-      "inv_weight": 0.0,
-      "source": "Patient:P001",
-      "target": "Endometrial Thickness"
-    },
-    {
-      "relationship": "HAS_FACTOR",
-      "value": 3.0,
-      "weight": 1.0,
-      "inv_weight": 0.0,
-      "source": "Patient:P001",
-      "target": "Embryo Grade"
-    },
-    {
       "relationship": "HAS_RISK",
       "severity": "moderate",
       "weight": 0.6,
       "inv_weight": 0.4,
       "source": "Patient:P001",
       "target": "High BMI Risk"
-    },
-    {
-      "relationship": "PREDICTED",
-      "probability": 0.5175,
-      "weight": 0.5175261777878084,
-      "inv_weight": 0.4824738222121916,
-      "source": "Patient:P001",
-      "target": "IVF Success"
     }
   ]
 }
