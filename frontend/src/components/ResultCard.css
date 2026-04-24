@@ -1,10 +1,14 @@
 .result-card {
-  background: var(--white);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  border: 1px solid rgba(232, 199, 200, 0.5);
+  box-shadow: 0 20px 50px rgba(27, 38, 59, 0.08);
+  border: 1px solid rgba(65, 90, 119, 0.14);
   padding: 1.25rem;
   min-height: 360px;
+}
+
+.knowledge-card {
+  min-height: 240px;
 }
 
 .result-card h2 {
@@ -19,10 +23,10 @@
 }
 
 .meta > div {
-  background: var(--cream-warm);
+  background: var(--soft-ice);
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.7rem;
-  border: 1px solid var(--blush-light);
+  border: 1px solid rgba(65, 90, 119, 0.12);
 }
 
 .block {
@@ -37,11 +41,13 @@
 
 .block p {
   margin: 0;
+  line-height: 1.6;
 }
 
 .block ul {
   margin: 0;
   padding-left: 1rem;
+  line-height: 1.45;
 }
 
 .empty {

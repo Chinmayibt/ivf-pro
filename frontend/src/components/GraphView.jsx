@@ -63,7 +63,9 @@ const GraphView = ({ graphData, riskPaths, criticalPath, explanation }) => {
     ...(explanation?.key_drivers || []),
   ];
   const related = activeNode
-    ? allExplanation.find((line) => line.toLowerCase().includes(activeNode.toLowerCase()))
+    ? allExplanation
+        .map((line) => (typeof line === 'string' ? line : line?.factor || line?.why_it_matters || line?.why_it_helps || ''))
+        .find((line) => line.toLowerCase().includes(activeNode.toLowerCase()))
     : null;
 
   return (
@@ -71,7 +73,7 @@ const GraphView = ({ graphData, riskPaths, criticalPath, explanation }) => {
       <h2>Knowledge Graph</h2>
       <CytoscapeComponent
         elements={elements}
-        style={{ width: '100%', height: '360px' }}
+        style={{ width: '100%', height: '250px' }}
         layout={{
           name: 'breadthfirst',
           directed: true,
@@ -84,11 +86,11 @@ const GraphView = ({ graphData, riskPaths, criticalPath, explanation }) => {
             style: {
               'background-color': (ele) => {
                 const id = ele.data('id');
-                if ((criticalPath || []).includes(id)) return '#00E676';
-                if (id.includes('Success')) return '#4CAF50';
-                if (id.includes('Low') || id.includes('Risk')) return '#F44336';
-                if (id.includes('Embryo') || id.includes('Egg')) return '#FF9800';
-                return '#2196F3';
+                if ((criticalPath || []).includes(id)) return '#F18F01';
+                if (id.includes('Success')) return '#2E7D62';
+                if (id.includes('Low') || id.includes('Risk')) return '#B42318';
+                if (id.includes('Embryo') || id.includes('Egg')) return '#F18F01';
+                return '#415A77';
               },
               label: 'data(label)',
               'font-size': '11px',
@@ -109,8 +111,8 @@ const GraphView = ({ graphData, riskPaths, criticalPath, explanation }) => {
               'curve-style': 'bezier',
             },
           },
-          { selector: '.edge-risk', style: { 'line-color': '#F44336', 'target-arrow-color': '#F44336' } },
-          { selector: '.edge-critical', style: { 'line-color': '#00E676', 'target-arrow-color': '#00E676' } },
+          { selector: '.edge-risk', style: { 'line-color': '#B42318', 'target-arrow-color': '#B42318' } },
+          { selector: '.edge-critical', style: { 'line-color': '#F18F01', 'target-arrow-color': '#F18F01' } },
         ]}
         cy={(cy) => {
           cy.removeAllListeners('tap');

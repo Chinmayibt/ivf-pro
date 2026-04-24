@@ -28,19 +28,6 @@ const Hero = () => {
             Progena combines advanced machine learning with clinical fertility data to give IVF specialists 
             real-time predictive insights — reducing guesswork and improving patient outcomes at every step.
           </p>
-          {/* Stats Strip */}
-          <div className="hero__stats animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
-            {[
-              { value: '94%', label: 'Prediction Accuracy' },
-              { value: '2x', label: 'Faster Decisions' },
-              { value: '200+', label: 'Clinics Onboarded' },
-            ].map(stat => (
-              <div className="hero__stat" key={stat.label}>
-                <span className="hero__stat-value">{stat.value}</span>
-                <span className="hero__stat-label">{stat.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Right Visual */}

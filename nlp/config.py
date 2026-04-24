@@ -89,3 +89,12 @@ PHRASES = {
         "poor sperm",
     ],
 }
+
+# -----------------------------
+# IMAGE MODEL CONFIG
+# -----------------------------
+IVF_IMAGE_MODEL_CONFIG = {
+    "model_path": "model/model.pth",
+    "classes": ["Non-pregnant", "Pregnant"],
+    "enable_gradcam": True,
+}

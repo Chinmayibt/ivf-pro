@@ -41,24 +41,6 @@
   display: block;
 }
 
-.about__badge {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--navy-deep);
-  color: white;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.65rem 1.2rem;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  box-shadow: 0 4px 20px rgba(28, 43, 74, 0.3);
-}
-
 .about__image-accent {
   position: absolute;
   top: -30px;
@@ -90,34 +72,9 @@
   line-height: 1.78;
 }
 
-/* Highlights */
-.about__highlights {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin: 1.75rem 0 2rem;
-}
-
-.about__highlight {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  font-size: 0.9rem;
-  color: var(--navy-text);
-  font-weight: 500;
-}
-
-.about__highlight-icon {
-  width: 34px; height: 34px;
-  background: var(--blush-light);
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--navy-mid);
-  flex-shrink: 0;
-}
-
 .about__btn {
   font-size: 0.88rem;
+  margin-top: 0.55rem;
 }
 
 @media (max-width: 900px) {

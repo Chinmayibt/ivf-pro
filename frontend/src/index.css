@@ -1,5 +1,5 @@
 /* =========================================
-   ZYRA — GLOBAL DESIGN SYSTEM
+   PROGENA IVF GLOBAL DESIGN SYSTEM
    ========================================= */
 
 *, *::before, *::after {
@@ -9,20 +9,26 @@
 }
 
 :root {
-  /* Color Palette */
-  --blush-primary: #E8C7C8;
-  --blush-light: #F5E6E7;
-  --blush-deep: #D4A5A7;
-  --blush-muted: #EDD5D6;
+  /* Medical color palette */
+  --deep-navy: #1B263B;
+  --steel-blue: #415A77;
+  --soft-ice: #F0F4F8;
+  --fertility-orange: #F18F01;
+  --cloud-blue: #D9EAFD;
 
-  --cream: #FAF7F4;
-  --cream-warm: #F5F0EA;
-  --cream-deep: #EDE6DC;
+  --blush-primary: #D9EAFD;
+  --blush-light: #F0F4F8;
+  --blush-deep: #415A77;
+  --blush-muted: #D9EAFD;
 
-  --navy-deep: #1C2B4A;
-  --navy-mid: #2D4072;
-  --navy-soft: #3D5491;
-  --navy-text: #253356;
+  --cream: #F0F4F8;
+  --cream-warm: #F8FBFF;
+  --cream-deep: #D9EAFD;
+
+  --navy-deep: #1B263B;
+  --navy-mid: #415A77;
+  --navy-soft: #5B7898;
+  --navy-text: #1B263B;
 
   --sage: #8BA89B;
   --sage-light: #C4D5CE;
@@ -30,9 +36,9 @@
   --gold-light: #E8D5B0;
 
   --white: #FFFFFF;
-  --gray-soft: #F0EDE8;
-  --gray-mid: #9BA4B2;
-  --gray-dark: #5A6478;
+  --gray-soft: #D9EAFD;
+  --gray-mid: #8293A8;
+  --gray-dark: #415A77;
 
   /* Typography */
   --font-serif: 'Playfair Display', Georgia, serif;
@@ -50,9 +56,9 @@
 
   /* Border Radius */
   --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-xl: 40px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
   --radius-full: 9999px;
 
   /* Transitions */
@@ -68,7 +74,7 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--cream);
+  background-color: var(--soft-ice);
   color: var(--navy-deep);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;

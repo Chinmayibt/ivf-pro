@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './Features.css';
-import { BarChart2 } from 'lucide-react';
+import { BarChart2, ScanLine, Cuboid } from 'lucide-react';
 
 const features = [
   {
@@ -10,6 +10,22 @@ const features = [
     description:
       'Run IVF outcome prediction from manual notes, structured clinical columns, or uploaded reports using the Progena NLP layer.',
     tags: ['Predictor', 'NLP'],
+  },
+  {
+    id: 'embryo-classification',
+    icon: ScanLine,
+    title: 'Embryo Image Classification',
+    description:
+      'Classify embryo images into clinically useful quality tiers with AI-assisted confidence scoring to support transfer planning.',
+    tags: ['Vision AI', 'Embryo Grade'],
+  },
+  {
+    id: 'embryo-3d',
+    icon: Cuboid,
+    title: '3D Embryo View',
+    description:
+      'Interactive 3D visualization module for embryo assessment workflows, enabling better morphology interpretation and review.',
+    tags: ['3D View', 'Visualization'],
   },
 ];
 
@@ -29,8 +45,8 @@ const Features = () => {
             <span className="features__title-em">Powered by Intelligence</span>
           </h2>
           <p className="features__subtitle">
-            Progena currently provides one production-ready capability: the IVF Predictor.
-            It is fully wired from frontend input to backend NLP inference and explainable output.
+            Progena currently provides three core capabilities for assisted decision making:
+            IVF Predictor, Embryo Image Classification, and 3D Embryo View.
           </p>
         </div>
 

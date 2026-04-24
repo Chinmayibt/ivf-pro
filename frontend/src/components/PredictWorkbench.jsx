@@ -143,13 +143,15 @@ const PredictWorkbench = () => {
 
         <div className="predict-workbench__right">
           <ResultCard result={result} loading={loading} />
-          <KnowledgeLayerCard result={result} loading={loading} />
-          <GraphView
-            graphData={result?.graph}
-            riskPaths={result?.risk_paths}
-            criticalPath={result?.critical_path}
-            explanation={result?.explanation}
-          />
+          <div className="predict-workbench__knowledge-row">
+            <KnowledgeLayerCard result={result} loading={loading} />
+            <GraphView
+              graphData={result?.graph}
+              riskPaths={result?.risk_paths}
+              criticalPath={result?.critical_path}
+              explanation={result?.explanation}
+            />
+          </div>
         </div>
       </div>
     </section>

@@ -1,11 +1,19 @@
 import joblib
 import numpy as np
 import pandas as pd
+import shutil
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, field
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 from nlp.extractor import process_input
+from nlp.llm_explainer import generate_llm_explanation
 from kg.ivf_graph import IVFGraph
 
 
@@ -16,22 +24,150 @@ ROOT = Path(__file__).resolve().parent.parent
 
 MODEL_A_PATH = ROOT / "model" / "model_a" / "model_clinical.pkl"
 MODEL_B_PATH = ROOT / "model" / "model_b" / "model_hormonal.pkl"
+FALLBACK_MODEL_A_PATH = ROOT / "model" / "model_a" / "model_clinical_fallback.pkl"
+FALLBACK_MODEL_B_PATH = ROOT / "model" / "model_b" / "model_hormonal_fallback.pkl"
 
 
 # ----------------------------
 # LOAD MODELS
 # ----------------------------
-try:
-    model_a = joblib.load(MODEL_A_PATH)
-    print("✅ Model A loaded")
-except Exception as e:
-    raise RuntimeError(f"❌ Failed to load Model A: {e}")
+def _train_fallback_model_a():
+    dataset_path = ROOT / "data" / "processed" / "FertilityTreatmentDataCleaned.csv"
+    if not dataset_path.exists():
+        raise RuntimeError(f"Fallback dataset missing: {dataset_path}")
 
-try:
-    model_b = joblib.load(MODEL_B_PATH)
-    print("✅ Model B loaded")
-except Exception as e:
-    raise RuntimeError(f"❌ Failed to load Model B: {e}")
+    raw = pd.read_csv(dataset_path).drop_duplicates()
+    if "Live birth occurrence" not in raw.columns:
+        raise RuntimeError("Fallback Model A training failed: missing 'Live birth occurrence' column")
+
+    y = raw["Live birth occurrence"].astype(int)
+    X = raw.drop(columns=["Live birth occurrence"])
+    for key_col in ["Specific treatment type", "Patient ethnicity", "Sperm source", "Egg source"]:
+        if key_col in X.columns:
+            X[f"{key_col}__missing"] = X[key_col].isna().astype(int)
+
+    X_train, _, y_train, _ = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
+    )
+
+    numeric_cols = X_train.select_dtypes(include=["number", "bool"]).columns.tolist()
+    categorical_cols = [c for c in X_train.columns if c not in numeric_cols]
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", Pipeline([("imputer", SimpleImputer(strategy="median"))]), numeric_cols),
+            (
+                "cat",
+                Pipeline(
+                    [
+                        ("imputer", SimpleImputer(strategy="most_frequent")),
+                        ("encoder", OneHotEncoder(handle_unknown="ignore")),
+                    ]
+                ),
+                categorical_cols,
+            ),
+        ]
+    )
+
+    return Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            (
+                "model",
+                RandomForestClassifier(
+                    n_estimators=300,
+                    min_samples_leaf=2,
+                    random_state=42,
+                    n_jobs=1,
+                    class_weight="balanced_subsample",
+                ),
+            ),
+        ]
+    ).fit(X_train, y_train)
+
+
+def _train_fallback_model_b():
+    primary = ROOT / "data" / "processed" / "ivf_final_dataset.csv"
+    fallback = ROOT / "data" / "processed" / "ivf_final_dataset (2).csv"
+    dataset_path = primary if primary.exists() else fallback
+    if not dataset_path.exists():
+        raise RuntimeError(f"Fallback dataset missing: {dataset_path}")
+
+    raw = pd.read_csv(dataset_path).drop_duplicates()
+    if "outcome" not in raw.columns:
+        raise RuntimeError("Fallback Model B training failed: missing 'outcome' column")
+
+    y = raw["outcome"].astype(int)
+    X = raw.drop(columns=["outcome"])
+
+    # Keep fallback features aligned with build_model_b_input schema.
+    numeric_feature_order = [
+        "age",
+        "amh",
+        "fsh",
+        "bmi",
+        "endometrial_thickness",
+        "cycle_number",
+        "embryo_grade",
+    ]
+    for col in numeric_feature_order:
+        if col not in X.columns:
+            X[col] = np.nan
+    X = X[numeric_feature_order]
+
+    X_train, _, y_train, _ = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
+    )
+
+    return Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median")),
+            (
+                "model",
+                RandomForestClassifier(
+                    n_estimators=300,
+                    min_samples_leaf=2,
+                    random_state=42,
+                    n_jobs=1,
+                    class_weight="balanced_subsample",
+                ),
+            ),
+        ]
+    ).fit(X_train, y_train)
+
+
+def _load_or_train_model(primary_path: Path, fallback_path: Path, train_fn, label: str):
+    if fallback_path.exists():
+        try:
+            model = joblib.load(fallback_path)
+            print(f"✅ {label} loaded from persistent fallback")
+            return model
+        except Exception:
+            print(f"⚠️ {label} fallback file unreadable, retraining fallback")
+
+    try:
+        model = joblib.load(primary_path)
+        print(f"✅ {label} loaded")
+        return model
+    except Exception:
+        print(f"⚠️ {label} legacy model incompatible, training sklearn fallback")
+        model = train_fn()
+        fallback_path.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(model, fallback_path)
+        # One-time migration: replace incompatible primary artifact with compatible fallback.
+        try:
+            legacy_backup = primary_path.with_suffix(primary_path.suffix + ".legacy_xgboost")
+            if primary_path.exists() and not legacy_backup.exists():
+                shutil.copy2(primary_path, legacy_backup)
+            shutil.copy2(fallback_path, primary_path)
+            print(f"✅ {label} primary artifact migrated to compatible fallback")
+        except Exception as migrate_err:
+            print(f"⚠️ {label} fallback migration skipped: {migrate_err}")
+        print(f"✅ {label} fallback trained and saved")
+        return model
+
+
+model_a = _load_or_train_model(MODEL_A_PATH, FALLBACK_MODEL_A_PATH, _train_fallback_model_a, "Model A")
+model_b = _load_or_train_model(MODEL_B_PATH, FALLBACK_MODEL_B_PATH, _train_fallback_model_b, "Model B")
 
 
 # ----------------------------
@@ -506,6 +642,46 @@ def short_why(drivers_pos, drivers_neg):
     return "; ".join(parts)
 
 
+def _to_rule_based_payload(explanation: ExplanationResult, prob: float) -> dict:
+    drivers_pos, drivers_neg, _, _ = split_drivers_and_lists(explanation)
+    detailed_negatives = []
+    for f in explanation.negative_factors:
+        detailed_negatives.append(
+            {
+                "factor": f.message,
+                "severity": f.severity,
+                "why_it_matters": "This clinical factor is associated with reduced IVF success likelihood.",
+                "impact": f"Severity is estimated as {f.severity}, which may negatively affect treatment outcome.",
+                "how_to_improve": {
+                    "short_term": [
+                        "Start immediate daily actions matched to this risk factor.",
+                        "Track one measurable marker weekly to monitor early response.",
+                    ],
+                    "before_next_cycle": [
+                        "Build a pre-cycle optimization plan based on repeat values of this factor.",
+                    ],
+                    "clinical_options": [
+                        "Use non-prescription clinical planning and monitoring options tailored to this risk.",
+                    ],
+                },
+            }
+        )
+
+    return {
+        "summary": generate_summary(explanation, prob),
+        "key_drivers": [f.message for f in drivers_pos + drivers_neg],
+        "positive_factors": [
+            {
+                "factor": f.message,
+                "why_it_matters": "This factor is associated with better ovarian response, embryo potential, or implantation conditions.",
+            }
+            for f in explanation.positive_factors
+        ],
+        "negative_factors": detailed_negatives,
+        "final_guidance": "",
+    }
+
+
 def compute_confidence(prob_a, prob_b, features):
     import numpy as np
 
@@ -642,7 +818,22 @@ def predict(source):
 
     confidence_label, confidence_score = compute_confidence(prob_a, prob_b, features)
 
-    explanation = generate_explanation(features, final_prob)
+    rule_based_explanation = generate_explanation(features, final_prob)
+    rule_based_payload = _to_rule_based_payload(rule_based_explanation, final_prob)
+
+    llm_input = {
+        "prediction": label,
+        "probability": float(final_prob),
+        "confidence": confidence_label,
+        "features": features,
+        "positive_factors": rule_based_payload["positive_factors"],
+        "negative_factors": rule_based_payload["negative_factors"],
+        "key_drivers": rule_based_payload["key_drivers"],
+        "missing_fields": features.get("missing_fields", []),
+    }
+
+    llm_output = generate_llm_explanation(llm_input)
+    explanation = llm_output if isinstance(llm_output, dict) else rule_based_payload
 
     # ----------------------------
     # KNOWLEDGE GRAPH INTEGRATION
@@ -651,7 +842,7 @@ def predict(source):
     graph.create_patient_subgraph(
         patient_id=patient_id,
         features=features,
-        explanation_result=explanation,
+        explanation_result=rule_based_explanation,
         predicted_prob=final_prob
     )
     risk_paths = graph.get_risk_paths(patient_id)
@@ -666,7 +857,7 @@ def predict(source):
         "confidence": confidence_label,
         "confidence_score": confidence_score,
         "data_quality_confidence": data_quality,
-        "summary": generate_summary(explanation, final_prob),
+        "summary": explanation.get("summary", rule_based_payload["summary"]),
         "explanation": explanation,
         "risk_paths": risk_paths,
         "critical_path": critical_path,
@@ -713,32 +904,36 @@ if __name__ == "__main__":
         )
         print("\n=== EXPLANATION ===")
         print("\nSummary:")
-        print(output["summary"])
-        drivers_pos, drivers_neg, remaining_pos, remaining_neg = split_drivers_and_lists(output["explanation"])
+        print(output.get("summary", output["explanation"].get("summary", "")))
+        explanation = output.get("explanation", {})
+        key_drivers = explanation.get("key_drivers", [])
+        positive_factors = explanation.get("positive_factors", [])
+        negative_factors = explanation.get("negative_factors", [])
         print("Why:")
-        print(short_why(drivers_pos, drivers_neg))
+        if key_drivers:
+            print("Driven by " + "; ".join(key_drivers[:2]))
+        else:
+            print("Driven by limited available clinical signals.")
         print("\nKey Drivers:")
-        if not drivers_pos and not drivers_neg:
+        if not key_drivers:
             print("• No dominant drivers identified due to limited data")
         else:
-            for f in drivers_pos:
-                print("↑", f.message)
-            for f in drivers_neg:
-                print("↓", f.message)
+            for driver in key_drivers:
+                print("•", driver)
 
         print("\nAdditional Positive Factors:")
-        if remaining_pos:
-            for p in remaining_pos:
-                print("✔", p.message)
+        if positive_factors:
+            for p in positive_factors:
+                print("✔", p)
         else:
             if missing_ratio > 0.6:
                 print("• Insufficient clinical data to identify risk or protective factors")
             else:
                 print("• No strong positive factors identified")
         print("\nAdditional Risk Factors:")
-        if remaining_neg:
-            for n in remaining_neg:
-                print("✖", n.message)
+        if negative_factors:
+            for n in negative_factors:
+                print("✖", n)
         else:
             if missing_ratio > 0.6:
                 print("• Insufficient clinical data to identify risk or protective factors")

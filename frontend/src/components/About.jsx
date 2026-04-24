@@ -1,6 +1,6 @@
 import React from 'react';
 import './About.css';
-import { ArrowRight, Award, Shield, TrendingUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const About = () => (
   <section className="about" id="about">
@@ -9,10 +9,6 @@ const About = () => (
       <div className="about__image-col animate-fadeInLeft">
         <div className="about__image-frame">
           <AboutIllustration />
-          <div className="about__badge">
-            <Award size={18} />
-            <span>Clinically Validated AI</span>
-          </div>
         </div>
         <div className="about__image-accent" aria-hidden />
       </div>
@@ -34,20 +30,6 @@ const About = () => (
           to make data-driven decisions, personalize treatment protocols, and communicate clearly with patients 
           who are navigating one of the most emotionally significant experiences of their lives.
         </p>
-
-        {/* Highlights */}
-        <div className="about__highlights">
-          {[
-            { icon: TrendingUp, text: 'Predictive success modeling trained on 500K+ cycles' },
-            { icon: Shield, text: 'HIPAA-compliant secure data infrastructure' },
-            { icon: Award, text: 'Validated by fertility specialists across 3 continents' },
-          ].map(({ icon: Icon, text }) => (
-            <div className="about__highlight" key={text}>
-              <div className="about__highlight-icon"><Icon size={16} /></div>
-              <span>{text}</span>
-            </div>
-          ))}
-        </div>
 
         <a href="#features" className="btn-primary about__btn" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}>
           Explore Features <ArrowRight size={16} />

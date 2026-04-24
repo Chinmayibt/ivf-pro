@@ -162,8 +162,8 @@
     {
       "label": "Patient",
       "patient_id": "P001",
-      "predicted_prob": "0.5871",
-      "timestamp": "2026-04-24T13:14:15.227331",
+      "predicted_prob": 0.5175,
+      "timestamp": "2026-04-24T22:54:48.796781",
       "id": "Patient:P001"
     }
   ],
@@ -434,7 +434,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 4.5,
+      "value": 5.5,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -442,7 +442,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 27.0,
+      "value": 30.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -458,7 +458,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 21.0,
+      "value": 31.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -466,7 +466,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 10.0,
+      "value": 9.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -481,18 +481,18 @@
       "target": "Embryo Grade"
     },
     {
-      "relationship": "HAS_FACTOR",
-      "value": 12.0,
-      "weight": 1.0,
-      "inv_weight": 0.0,
+      "relationship": "HAS_RISK",
+      "severity": "moderate",
+      "weight": 0.6,
+      "inv_weight": 0.4,
       "source": "Patient:P001",
-      "target": "Embryos Created"
+      "target": "High BMI Risk"
     },
     {
       "relationship": "PREDICTED",
-      "probability": "0.5871",
-      "weight": "0.5870705",
-      "inv_weight": 0.4129294753074646,
+      "probability": 0.5175,
+      "weight": 0.5175261777878084,
+      "inv_weight": 0.4824738222121916,
       "source": "Patient:P001",
       "target": "IVF Success"
     }
