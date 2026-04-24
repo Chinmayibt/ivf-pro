@@ -1,0 +1,129 @@
+.about {
+  padding: var(--section-padding);
+  background: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+
+.about::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(to left, var(--cream) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.about__container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+/* Image Column */
+.about__image-col {
+  position: relative;
+}
+
+.about__image-frame {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(232, 199, 200, 0.4);
+}
+
+.about__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.about__badge {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--navy-deep);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.65rem 1.2rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(28, 43, 74, 0.3);
+}
+
+.about__image-accent {
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--blush-primary) 0%, transparent 70%);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Content */
+.about__heading {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  margin-bottom: 1.25rem;
+  line-height: 1.2;
+}
+
+.about__heading-accent {
+  color: var(--navy-mid);
+  font-style: italic;
+}
+
+.about__text {
+  margin-bottom: 1.1rem;
+  font-size: 0.98rem;
+  line-height: 1.78;
+}
+
+/* Highlights */
+.about__highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.75rem 0 2rem;
+}
+
+.about__highlight {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 0.9rem;
+  color: var(--navy-text);
+  font-weight: 500;
+}
+
+.about__highlight-icon {
+  width: 34px; height: 34px;
+  background: var(--blush-light);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--navy-mid);
+  flex-shrink: 0;
+}
+
+.about__btn {
+  font-size: 0.88rem;
+}
+
+@media (max-width: 900px) {
+  .about__container {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  .about__image-frame { max-width: 380px; }
+}

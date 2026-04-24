@@ -1,0 +1,229 @@
+/* =========================================
+   ZYRA — GLOBAL DESIGN SYSTEM
+   ========================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Color Palette */
+  --blush-primary: #E8C7C8;
+  --blush-light: #F5E6E7;
+  --blush-deep: #D4A5A7;
+  --blush-muted: #EDD5D6;
+
+  --cream: #FAF7F4;
+  --cream-warm: #F5F0EA;
+  --cream-deep: #EDE6DC;
+
+  --navy-deep: #1C2B4A;
+  --navy-mid: #2D4072;
+  --navy-soft: #3D5491;
+  --navy-text: #253356;
+
+  --sage: #8BA89B;
+  --sage-light: #C4D5CE;
+  --gold-soft: #C9A96E;
+  --gold-light: #E8D5B0;
+
+  --white: #FFFFFF;
+  --gray-soft: #F0EDE8;
+  --gray-mid: #9BA4B2;
+  --gray-dark: #5A6478;
+
+  /* Typography */
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Spacing */
+  --section-padding: 5rem 2rem;
+  --container-max: 1200px;
+
+  /* Shadows */
+  --shadow-soft: 0 4px 24px rgba(28, 43, 74, 0.06);
+  --shadow-card: 0 8px 40px rgba(28, 43, 74, 0.08);
+  --shadow-hover: 0 16px 60px rgba(28, 43, 74, 0.14);
+  --shadow-nav: 0 2px 20px rgba(28, 43, 74, 0.08);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 40px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-smooth: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--cream);
+  color: var(--navy-deep);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ---- UTILITIES ---- */
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.section-label {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--navy-mid);
+  background: var(--blush-light);
+  border: 1px solid var(--blush-primary);
+  padding: 0.35rem 1rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 1.25rem;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  line-height: 1.2;
+  color: var(--navy-deep);
+}
+
+p {
+  color: var(--gray-dark);
+  line-height: 1.75;
+}
+
+/* ---- BUTTONS ---- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--navy-deep);
+  color: var(--white);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.85rem 2rem;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-smooth);
+  box-shadow: 0 4px 20px rgba(28, 43, 74, 0.25);
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--navy-mid);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(28, 43, 74, 0.32);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--navy-deep);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.85rem 2rem;
+  border: 2px solid var(--blush-deep);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-smooth);
+}
+
+.btn-secondary:hover {
+  background: var(--blush-light);
+  border-color: var(--navy-deep);
+  transform: translateY(-2px);
+}
+
+.btn-outline-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--white);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.85rem 2rem;
+  border: 2px solid rgba(255,255,255,0.5);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-smooth);
+}
+
+.btn-outline-white:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.85);
+  transform: translateY(-2px);
+}
+
+/* ---- ANIMATIONS ---- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-fadeInUp    { animation: fadeInUp    0.7s ease both; }
+.animate-fadeInLeft  { animation: fadeInLeft  0.7s ease both; }
+.animate-fadeInRight { animation: fadeInRight 0.7s ease both; }
+
+/* ---- SCROLLBAR ---- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--blush-deep); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--navy-soft); }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  :root { --section-padding: 3.5rem 1.25rem; }
+  .container { padding: 0 1.25rem; }
+}

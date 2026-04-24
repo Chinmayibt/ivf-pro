@@ -1,0 +1,10 @@
+{
+  "dataset": "D:\\IVF\\data\\processed\\ivf_final_dataset (2).csv",
+  "winner_model": "xgboost",
+  "winner_cv_auc": 0.7295041399858333,
+  "holdout_auc": 0.7509781436958586,
+  "holdout_pr_auc": 0.6375118563193963,
+  "xgboost_cv_auc": 0.7295041399858333,
+  "hist_gradient_boosting_cv_auc": 0.7248776433355967,
+  "random_forest_holdout_auc": 0.7142875549199234
+}

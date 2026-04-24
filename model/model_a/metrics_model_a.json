@@ -1,0 +1,11 @@
+{
+  "dataset": "D:\\IVF\\data\\processed\\FertilityTreatmentDataCleaned.csv",
+  "cohort": "Specific treatment type == IVF",
+  "winner_model": "xgboost",
+  "winner_cv_auc": 0.7382468111275797,
+  "holdout_auc": 0.7427301160936094,
+  "holdout_pr_auc": 0.44439494053730344,
+  "xgboost_cv_auc": 0.7382468111275797,
+  "xgboost_fixed_cv_auc": 0.7218302482221942,
+  "random_forest_holdout_auc": 0.7127574942096986
+}

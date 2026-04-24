@@ -1,0 +1,36 @@
+.top-strip {
+  background: linear-gradient(90deg, var(--blush-deep) 0%, var(--blush-primary) 50%, var(--blush-deep) 100%);
+  padding: 0.6rem 1rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.top-strip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+.top-strip__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--navy-deep);
+  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+.top-strip__icon {
+  color: var(--navy-mid);
+  opacity: 0.7;
+  flex-shrink: 0;
+}

@@ -1,0 +1,193 @@
+.cta-section {
+  padding: 6rem 2rem;
+  text-align: center;
+  background: var(--navy-deep);
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-section__bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #1C2B4A 0%, #253356 50%, #1A2440 100%);
+  z-index: 0;
+}
+
+.cta-section__orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cta-section__orb--1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(232, 199, 200, 0.12) 0%, transparent 70%);
+  top: -150px; left: -100px;
+  animation: float 10s ease-in-out infinite;
+}
+
+.cta-section__orb--2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(212, 165, 167, 0.08) 0%, transparent 70%);
+  bottom: -100px; right: -80px;
+  animation: float 12s ease-in-out infinite reverse;
+}
+
+.cta-section__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cta-section__label {
+  background: rgba(232, 199, 200, 0.15);
+  border-color: rgba(232, 199, 200, 0.3);
+  color: var(--blush-primary);
+  font-size: 0.72rem;
+}
+
+.cta-section__heading {
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: white;
+  margin-bottom: 1.25rem;
+  line-height: 1.18;
+}
+
+.cta-section__heading-em {
+  font-style: italic;
+  color: var(--blush-primary);
+}
+
+.cta-section__sub {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.7;
+  max-width: 520px;
+  margin-bottom: 2rem;
+}
+
+/* Benefits */
+.cta-section__benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+}
+
+.cta-section__benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+}
+
+.cta-section__benefit svg { color: var(--blush-primary); flex-shrink: 0; }
+
+/* Form */
+.cta-section__form {
+  width: 100%;
+  max-width: 520px;
+}
+
+.cta-section__form-inner {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cta-section__input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.9rem 1.4rem;
+  border-radius: var(--radius-full);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  backdrop-filter: blur(8px);
+}
+
+.cta-section__input::placeholder { color: rgba(255,255,255,0.4); }
+.cta-section__input:focus { border-color: var(--blush-primary); }
+
+.cta-section__btn {
+  flex-shrink: 0;
+  background: var(--blush-deep);
+  box-shadow: 0 4px 20px rgba(212, 165, 167, 0.4);
+}
+
+.cta-section__btn:hover {
+  background: var(--blush-primary);
+  color: var(--navy-deep);
+}
+
+.cta-section__disclaimer {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 0.9rem;
+}
+
+/* Success */
+.cta-section__success {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(212, 165, 167, 0.4);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  text-align: left;
+  color: white;
+  max-width: 480px;
+}
+
+.cta-section__success svg { color: var(--blush-primary); flex-shrink: 0; margin-top: 2px; }
+.cta-section__success strong { display: block; font-size: 1rem; margin-bottom: 0.3rem; }
+.cta-section__success p { font-size: 0.88rem; color: rgba(255,255,255,0.7); }
+.cta-section__success em { color: var(--blush-primary); font-style: normal; }
+
+/* Social Proof */
+.cta-section__proof {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.55);
+}
+
+.cta-section__avatars {
+  display: flex;
+}
+
+.cta-section__avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--navy-deep);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  margin-left: -8px;
+  position: relative;
+}
+
+.cta-section__avatar:first-child { margin-left: 0; }
+.cta-section__proof strong { color: rgba(255,255,255,0.85); }
+
+@media (max-width: 520px) {
+  .cta-section__form-inner { flex-direction: column; }
+  .cta-section__input, .cta-section__btn { width: 100%; justify-content: center; }
+}

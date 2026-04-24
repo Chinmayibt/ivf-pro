@@ -1,0 +1,562 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "Factor",
+      "unit": "ng/mL",
+      "category": "ovarian_reserve",
+      "id": "AMH"
+    },
+    {
+      "label": "Factor",
+      "unit": "years",
+      "category": "demographic",
+      "id": "Age"
+    },
+    {
+      "label": "Factor",
+      "unit": "IU/L",
+      "category": "hormonal",
+      "id": "FSH"
+    },
+    {
+      "label": "Factor",
+      "unit": "kg/m2",
+      "category": "demographic",
+      "id": "BMI"
+    },
+    {
+      "label": "Factor",
+      "unit": "mm",
+      "category": "uterine",
+      "id": "Endometrial Thickness"
+    },
+    {
+      "label": "Factor",
+      "unit": "grade",
+      "category": "embryology",
+      "id": "Embryo Grade"
+    },
+    {
+      "label": "Factor",
+      "unit": "count",
+      "category": "embryology",
+      "id": "Embryos Created"
+    },
+    {
+      "label": "Factor",
+      "unit": "count",
+      "category": "ovarian_reserve",
+      "id": "Oocytes Retrieved"
+    },
+    {
+      "label": "Factor",
+      "unit": "%",
+      "category": "embryology",
+      "id": "Fertilisation Rate"
+    },
+    {
+      "label": "Factor",
+      "unit": "count",
+      "category": "ovarian_reserve",
+      "id": "AFC"
+    },
+    {
+      "label": "Factor",
+      "unit": "%",
+      "category": "male_factor",
+      "id": "Sperm Motility"
+    },
+    {
+      "label": "Factor",
+      "unit": "count",
+      "category": "history",
+      "id": "Prior IVF Failures"
+    },
+    {
+      "label": "Condition",
+      "severity": "high",
+      "id": "Low Ovarian Reserve"
+    },
+    {
+      "label": "Condition",
+      "severity": "moderate",
+      "id": "High Age Risk"
+    },
+    {
+      "label": "Condition",
+      "severity": "moderate",
+      "id": "Hormonal Imbalance"
+    },
+    {
+      "label": "Condition",
+      "severity": "moderate",
+      "id": "High BMI Risk"
+    },
+    {
+      "label": "Condition",
+      "severity": "high",
+      "id": "Thin Endometrium"
+    },
+    {
+      "label": "Condition",
+      "severity": "high",
+      "id": "Poor Embryo Quality"
+    },
+    {
+      "label": "Condition",
+      "severity": "moderate",
+      "id": "Low Egg Yield"
+    },
+    {
+      "label": "Condition",
+      "severity": "moderate",
+      "id": "Low Fertilisation"
+    },
+    {
+      "label": "Condition",
+      "severity": "moderate",
+      "id": "Male Factor Infertility"
+    },
+    {
+      "label": "Condition",
+      "severity": "high",
+      "id": "Recurrent Failure"
+    },
+    {
+      "label": "Condition",
+      "severity": "moderate",
+      "id": "OHSS Risk"
+    },
+    {
+      "label": "Intermediate",
+      "pathway": "ovarian",
+      "id": "Egg Production"
+    },
+    {
+      "label": "Intermediate",
+      "pathway": "embryology",
+      "id": "Fertilisation"
+    },
+    {
+      "label": "Intermediate",
+      "pathway": "embryology",
+      "id": "Embryo Development"
+    },
+    {
+      "label": "Intermediate",
+      "pathway": "uterine",
+      "id": "Implantation"
+    },
+    {
+      "label": "Intermediate",
+      "pathway": "endocrine",
+      "id": "Hormonal Environment"
+    },
+    {
+      "label": "Outcome",
+      "id": "IVF Success"
+    },
+    {
+      "label": "Patient",
+      "patient_id": "P001",
+      "predicted_prob": 0.28,
+      "timestamp": "2026-04-24T12:27:06.000388",
+      "id": "Patient:P001"
+    }
+  ],
+  "links": [
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.9,
+      "clinical_basis": "AMH<1 predicts DOR",
+      "inv_weight": 0.09999999999999998,
+      "source": "AMH",
+      "target": "Low Ovarian Reserve"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.6,
+      "clinical_basis": "AMH>6 predicts OHSS",
+      "inv_weight": 0.4,
+      "source": "AMH",
+      "target": "OHSS Risk"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.85,
+      "clinical_basis": "Age>35 reduces egg quality",
+      "inv_weight": 0.15000000000000002,
+      "source": "Age",
+      "target": "High Age Risk"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.6,
+      "clinical_basis": "Age alters FSH/LH ratio",
+      "inv_weight": 0.4,
+      "source": "Age",
+      "target": "Hormonal Environment"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.8,
+      "clinical_basis": "FSH>10 indicates poor reserve",
+      "inv_weight": 0.19999999999999996,
+      "source": "FSH",
+      "target": "Hormonal Imbalance"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.75,
+      "clinical_basis": "BMI>30 impairs ovarian response",
+      "inv_weight": 0.25,
+      "source": "BMI",
+      "target": "High BMI Risk"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.9,
+      "clinical_basis": "Thickness<7mm impairs receptivity",
+      "inv_weight": 0.09999999999999998,
+      "source": "Endometrial Thickness",
+      "target": "Thin Endometrium"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.9,
+      "clinical_basis": "Grade directly predicts implantation",
+      "inv_weight": 0.09999999999999998,
+      "source": "Embryo Grade",
+      "target": "Poor Embryo Quality"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.8,
+      "clinical_basis": "Low count limits selection options",
+      "inv_weight": 0.19999999999999996,
+      "source": "Embryos Created",
+      "target": "Low Egg Yield"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.95,
+      "clinical_basis": "Direct oocyte yield measure",
+      "inv_weight": 0.050000000000000044,
+      "source": "Oocytes Retrieved",
+      "target": "Egg Production"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.85,
+      "clinical_basis": "Fert rate<50% is clinically abnormal",
+      "inv_weight": 0.15000000000000002,
+      "source": "Fertilisation Rate",
+      "target": "Low Fertilisation"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.85,
+      "clinical_basis": "AFC<7 confirms DOR",
+      "inv_weight": 0.15000000000000002,
+      "source": "AFC",
+      "target": "Low Ovarian Reserve"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.55,
+      "clinical_basis": "High AFC \u2192 OHSS risk",
+      "inv_weight": 0.44999999999999996,
+      "source": "AFC",
+      "target": "OHSS Risk"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.85,
+      "clinical_basis": "Motility<32% \u2014 WHO threshold",
+      "inv_weight": 0.15000000000000002,
+      "source": "Sperm Motility",
+      "target": "Male Factor Infertility"
+    },
+    {
+      "relationship": "AFFECTS",
+      "weight": 0.9,
+      "clinical_basis": ">=3 failures defines RIF",
+      "inv_weight": 0.09999999999999998,
+      "source": "Prior IVF Failures",
+      "target": "Recurrent Failure"
+    },
+    {
+      "relationship": "LEADS_TO",
+      "weight": 0.9,
+      "clinical_basis": "DOR reduces oocyte yield",
+      "inv_weight": 0.09999999999999998,
+      "source": "Low Ovarian Reserve",
+      "target": "Egg Production"
+    },
+    {
+      "relationship": "LEADS_TO",
+      "weight": 0.8,
+      "clinical_basis": "Aneuploidy risk increases with age",
+      "inv_weight": 0.19999999999999996,
+      "source": "High Age Risk",
+      "target": "Embryo Development"
+    },
+    {
+      "relationship": "DISRUPTS",
+      "weight": 0.85,
+      "clinical_basis": "FSH dysregulation impairs response",
+      "inv_weight": 0.15000000000000002,
+      "source": "Hormonal Imbalance",
+      "target": "Hormonal Environment"
+    },
+    {
+      "relationship": "DISRUPTS",
+      "weight": 0.7,
+      "clinical_basis": "Adipose tissue alters oestrogen",
+      "inv_weight": 0.30000000000000004,
+      "source": "High BMI Risk",
+      "target": "Hormonal Environment"
+    },
+    {
+      "relationship": "REDUCES",
+      "weight": 0.65,
+      "clinical_basis": "Endometrial receptivity impaired",
+      "inv_weight": 0.35,
+      "source": "High BMI Risk",
+      "target": "Implantation"
+    },
+    {
+      "relationship": "LEADS_TO",
+      "weight": 0.9,
+      "clinical_basis": "Thin lining prevents embryo embedding",
+      "inv_weight": 0.09999999999999998,
+      "source": "Thin Endometrium",
+      "target": "Implantation"
+    },
+    {
+      "relationship": "REDUCES",
+      "weight": 0.9,
+      "clinical_basis": "Poor grade leads to embryo arrest",
+      "inv_weight": 0.09999999999999998,
+      "source": "Poor Embryo Quality",
+      "target": "Embryo Development"
+    },
+    {
+      "relationship": "REDUCES",
+      "weight": 0.75,
+      "clinical_basis": "Fewer embryos to select from",
+      "inv_weight": 0.25,
+      "source": "Low Egg Yield",
+      "target": "Fertilisation"
+    },
+    {
+      "relationship": "REDUCES",
+      "weight": 0.8,
+      "clinical_basis": "Fewer embryos available for transfer",
+      "inv_weight": 0.19999999999999996,
+      "source": "Low Fertilisation",
+      "target": "Embryo Development"
+    },
+    {
+      "relationship": "REDUCES",
+      "weight": 0.8,
+      "clinical_basis": "Poor sperm-egg interaction",
+      "inv_weight": 0.19999999999999996,
+      "source": "Male Factor Infertility",
+      "target": "Fertilisation"
+    },
+    {
+      "relationship": "REDUCES",
+      "weight": 0.85,
+      "clinical_basis": "Implantation failure pattern established",
+      "inv_weight": 0.15000000000000002,
+      "source": "Recurrent Failure",
+      "target": "Implantation"
+    },
+    {
+      "relationship": "FEEDS",
+      "weight": 0.9,
+      "clinical_basis": "Oocytes needed for fertilisation",
+      "inv_weight": 0.09999999999999998,
+      "source": "Egg Production",
+      "target": "Fertilisation"
+    },
+    {
+      "relationship": "IMPACTS",
+      "weight": 0.9,
+      "clinical_basis": "Oocyte yield drives entire cycle",
+      "inv_weight": 0.09999999999999998,
+      "source": "Egg Production",
+      "target": "IVF Success"
+    },
+    {
+      "relationship": "IMPACTS",
+      "weight": 0.95,
+      "clinical_basis": "Fertilisation is the gating step",
+      "inv_weight": 0.050000000000000044,
+      "source": "Fertilisation",
+      "target": "IVF Success"
+    },
+    {
+      "relationship": "IMPACTS",
+      "weight": 0.9,
+      "clinical_basis": "Embryo quality drives implantation",
+      "inv_weight": 0.09999999999999998,
+      "source": "Embryo Development",
+      "target": "IVF Success"
+    },
+    {
+      "relationship": "IMPACTS",
+      "weight": 0.95,
+      "clinical_basis": "Implantation is the final step",
+      "inv_weight": 0.050000000000000044,
+      "source": "Implantation",
+      "target": "IVF Success"
+    },
+    {
+      "relationship": "IMPACTS",
+      "weight": 0.7,
+      "clinical_basis": "Endocrine axis drives folliculogenesis",
+      "inv_weight": 0.30000000000000004,
+      "source": "Hormonal Environment",
+      "target": "Egg Production"
+    },
+    {
+      "relationship": "IMPACTS",
+      "weight": 0.7,
+      "clinical_basis": "Endocrine support needed throughout",
+      "inv_weight": 0.30000000000000004,
+      "source": "Hormonal Environment",
+      "target": "IVF Success"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 0.7,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "AMH"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 37.0,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Age"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 14.2,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "FSH"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 28.5,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "BMI"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 6.5,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Endometrial Thickness"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 2.0,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Embryo Grade"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 2.0,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Embryos Created"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 3.0,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Oocytes Retrieved"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 0.45,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Fertilisation Rate"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 5.0,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "AFC"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 0.28,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Sperm Motility"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 2.0,
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Prior IVF Failures"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "high",
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Low Ovarian Reserve"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "moderate",
+      "weight": 0.6,
+      "source": "Patient:P001",
+      "target": "High Age Risk"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "moderate",
+      "weight": 0.6,
+      "source": "Patient:P001",
+      "target": "Hormonal Imbalance"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "high",
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Thin Endometrium"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "high",
+      "weight": 1.0,
+      "source": "Patient:P001",
+      "target": "Poor Embryo Quality"
+    },
+    {
+      "relationship": "PREDICTED",
+      "probability": 0.28,
+      "weight": 0.28,
+      "source": "Patient:P001",
+      "target": "IVF Success"
+    }
+  ]
+}
