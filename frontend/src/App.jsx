@@ -60,7 +60,7 @@ const initialStructured = {
   total_eggs: '',
 };
 
-const patientRoster = [
+const initialPatientRoster = [
   { id: 'P-1042', name: 'Ananya Rao', age: 32, stage: 'Stimulation day 7', risk: 'Moderate', next: 'Follicle scan' },
   { id: 'P-1188', name: 'Meera Shah', age: 36, stage: 'Embryo review', risk: 'Elevated', next: 'Counseling call' },
   { id: 'P-1214', name: 'Priya Nair', age: 29, stage: 'Transfer prep', risk: 'Low', next: 'Endometrium review' },
@@ -77,6 +77,7 @@ const treatmentSteps = [
 
 const doctorSections = [
   { id: 'input_hub', label: 'Prediction Inputs', icon: ClipboardList },
+  { id: 'image_classification', label: 'Image Classification', icon: ImageIcon },
   { id: 'prediction_result', label: 'Prediction Result', icon: BarChart3 },
   { id: 'knowledge_graph', label: 'Knowledge Graph', icon: Activity },
   { id: 'tracker', label: 'Treatment Tracking', icon: CalendarDays },
@@ -86,6 +87,7 @@ const doctorSections = [
 
 const patientSections = [
   { id: 'input_hub', label: 'Prediction Inputs', icon: ClipboardList },
+  { id: 'image_classification', label: 'Image Classification', icon: ImageIcon },
   { id: 'prediction_result', label: 'Prediction Result', icon: BarChart3 },
   { id: 'knowledge_graph', label: 'Knowledge Graph', icon: Activity },
   { id: 'tracker', label: 'Tracker Calendar', icon: CalendarDays },
@@ -102,7 +104,8 @@ const starterRecommendation = [
 function App() {
   const [view, setView] = useState('landing');
   const [loginRole, setLoginRole] = useState('doctor');
-  const [activePatientId, setActivePatientId] = useState(patientRoster[0].id);
+  const [patientRoster, setPatientRoster] = useState(initialPatientRoster);
+  const [activePatientId, setActivePatientId] = useState(initialPatientRoster[0].id);
   const [mode, setMode] = useState('manual');
   const [doctorSection, setDoctorSection] = useState('input_hub');
   const [patientSection, setPatientSection] = useState('input_hub');
@@ -125,7 +128,7 @@ function App() {
   const [validatedRecommendation, setValidatedRecommendation] = useState(false);
   const [trackingDone, setTrackingDone] = useState(3);
 
-  const activePatient = patientRoster.find((patient) => patient.id === activePatientId) || patientRoster[0];
+  const activePatient = patientRoster.find((patient) => patient.id === activePatientId) || patientRoster[0] || initialPatientRoster[0];
   const probability = typeof result?.probability === 'number' ? Math.round(result.probability * 100) : null;
 
   const recommendations = useMemo(() => {
@@ -164,18 +167,19 @@ function App() {
     setView('login');
   };
 
-  const runPrediction = async () => {
+  const runPrediction = async (forcedMode = null) => {
+    const activeMode = forcedMode || mode;
     setLoading(true);
     setError('');
     try {
       let nextResult = null;
-      if (mode === 'manual') {
+      if (activeMode === 'manual') {
         if (!manualInput.trim()) {
           setError('Please enter patient details before running analysis.');
           return;
         }
         nextResult = await getPrediction(manualInput.trim());
-      } else if (mode === 'columns') {
+      } else if (activeMode === 'columns') {
         const payload = {};
         Object.entries(structured).forEach(([key, value]) => {
           if (value !== '') payload[key] = Number.isNaN(Number(value)) ? value : Number(value);
@@ -185,13 +189,13 @@ function App() {
           return;
         }
         nextResult = await getPrediction(payload);
-      } else if (mode === 'pdf') {
+      } else if (activeMode === 'pdf') {
         if (!pdfFile) {
           setError('Please select a report PDF or text file.');
           return;
         }
         nextResult = await getPredictionFromPdf(pdfFile);
-      } else if (mode === 'image') {
+      } else if (activeMode === 'image') {
         if (!imageFile) {
           setError('Please upload an image for classification.');
           return;
@@ -199,12 +203,19 @@ function App() {
         nextResult = await getPredictionFromImage(imageFile);
       }
       if (nextResult) {
-        setResult(nextResult);
-        setFeatureResults((previous) => ({ ...previous, [mode]: nextResult }));
+        if (activeMode === 'image') {
+          setFeatureResults((previous) => ({ ...previous, image: nextResult }));
+        } else {
+          setResult(nextResult);
+          setFeatureResults((previous) => ({ ...previous, [activeMode]: nextResult }));
+        }
       }
       setValidatedRecommendation(false);
       if (nextResult && view === 'doctor') {
-        setDoctorSection('recommendation');
+        setDoctorSection(activeMode === 'image' ? 'image_classification' : 'prediction_result');
+      }
+      if (nextResult && view === 'patient') {
+        setPatientSection(activeMode === 'image' ? 'image_classification' : 'prediction_result');
       }
     } catch (err) {
       setError(err.message || 'Prediction request failed.');
@@ -282,10 +293,12 @@ function App() {
         appointments={appointments}
         notifications={notifications}
         patientSearch={patientSearch}
+        patientRoster={patientRoster}
         setActivePatientId={setActivePatientId}
         setDoctorSection={setDoctorSection}
         setPatientSection={setPatientSection}
         setPatientSearch={setPatientSearch}
+        setPatientRoster={setPatientRoster}
         setImageFile={setImageFile}
         setManualInput={setManualInput}
         setMode={setMode}
@@ -654,6 +667,7 @@ function HospitalDashboard(props) {
     activePatientId,
     doctorSection,
     patientSection,
+    patientRoster,
     patientSearch,
     error,
     imageFile,
@@ -671,6 +685,7 @@ function HospitalDashboard(props) {
     setDoctorSection,
     setPatientSection,
     setPatientSearch,
+    setPatientRoster,
     setImageFile,
     setManualInput,
     setMode,
@@ -725,33 +740,15 @@ function HospitalDashboard(props) {
             ))}
           </div>
           {isDoctor ? (
-            <div className="doctor-quick-panel">
-              <label htmlFor="patient-search" className="doctor-quick-label">Find patient</label>
-              <input
-                id="patient-search"
-                className="patient-search-input"
-                value={patientSearch}
-                onChange={(event) => setPatientSearch(event.target.value)}
-                placeholder="Search by name or ID"
-              />
-              <div className="doctor-quick-patient-list">
-                {filteredPatients.slice(0, 5).map((patient) => (
-                  <button
-                    key={patient.id}
-                    type="button"
-                    className={`doctor-quick-patient ${patient.id === activePatientId ? 'active' : ''}`}
-                    onClick={() => setActivePatientId(patient.id)}
-                  >
-                    <span>{patient.name}</span>
-                    <small>{patient.id}</small>
-                  </button>
-                ))}
-              </div>
-              <div className="doctor-quick-options">
-                <button type="button" onClick={() => setDoctorSection('prediction_result')}>Go to Result</button>
-                <button type="button" onClick={() => setDoctorSection('recommendation')}>Go to Recommendation</button>
-              </div>
-            </div>
+            <DoctorPatientFeature
+              activePatientId={activePatientId}
+              filteredPatients={filteredPatients}
+              patientSearch={patientSearch}
+              setActivePatientId={setActivePatientId}
+              setDoctorSection={setDoctorSection}
+              setPatientSearch={setPatientSearch}
+              setPatientRoster={setPatientRoster}
+            />
           ) : null}
           <button className="btn-outline" type="button" onClick={onBack}>Back to Landing</button>
         </aside>
@@ -856,7 +853,7 @@ function DoctorSectionView(props) {
     onRunPrediction,
   } = props;
 
-  if (activeSection === 'input_hub' || ['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
+  if (activeSection === 'input_hub' || ['manual', 'clinical', 'report'].includes(activeSection)) {
     return (
       <div className="doctor-input-stack doctor-input-stack--single">
         <InputWorkspace
@@ -878,8 +875,26 @@ function DoctorSectionView(props) {
     );
   }
 
+  if (activeSection === 'image_classification') {
+    return (
+      <div className="doctor-input-stack doctor-input-stack--single">
+        <ImageClassificationPanel
+          error={error}
+          imageFile={imageFile}
+          loading={loading}
+          result={featureResults.image}
+          setImageFile={setImageFile}
+          onRunPrediction={() => {
+            setMode('image');
+            onRunPrediction('image');
+          }}
+        />
+      </div>
+    );
+  }
+
   if (activeSection === 'prediction_result') {
-    const modeResult = featureResults[mode] || result;
+    const modeResult = featureResults.manual || featureResults.columns || featureResults.pdf || result;
     return (
       <div className="doctor-input-stack">
         <StructuredPredictionResult
@@ -931,6 +946,148 @@ function DoctorSectionView(props) {
   return <PatientHistoryCard activePatient={activePatient} />;
 }
 
+function DoctorPatientFeature({
+  activePatientId,
+  filteredPatients,
+  patientSearch,
+  setActivePatientId,
+  setDoctorSection,
+  setPatientSearch,
+  setPatientRoster,
+}) {
+  const [patientFeatureMode, setPatientFeatureMode] = useState('list');
+  const [newPatient, setNewPatient] = useState({
+    id: '',
+    name: '',
+    age: '',
+    stage: 'New intake',
+    risk: 'Pending',
+    next: 'Baseline consult',
+  });
+  const [addPatientError, setAddPatientError] = useState('');
+
+  const addPatient = () => {
+    const id = newPatient.id.trim().toUpperCase();
+    const name = newPatient.name.trim();
+    if (!id || !name) {
+      setAddPatientError('Patient name and ID are required.');
+      return false;
+    }
+    let created = null;
+    setPatientRoster((previous) => {
+      const exists = previous.some((patient) => patient.id.toLowerCase() === id.toLowerCase());
+      if (exists) {
+        setAddPatientError('That patient ID already exists.');
+        return previous;
+      }
+      created = {
+        id,
+        name,
+        age: Number(newPatient.age) || 'NA',
+        stage: newPatient.stage.trim() || 'New intake',
+        risk: newPatient.risk.trim() || 'Pending',
+        next: newPatient.next.trim() || 'Baseline consult',
+      };
+      return [created, ...previous];
+    });
+    if (created) {
+      setAddPatientError('');
+      setActivePatientId(created.id);
+      setPatientSearch('');
+      setNewPatient({
+        id: '',
+        name: '',
+        age: '',
+        stage: 'New intake',
+        risk: 'Pending',
+        next: 'Baseline consult',
+      });
+      return true;
+    }
+    return false;
+  };
+
+  return (
+    <div className="doctor-quick-panel doctor-quick-panel--compact">
+      <div className="doctor-quick-header doctor-quick-header--stacked">
+        <label htmlFor="patient-search" className="doctor-quick-label">Patient Feature</label>
+        <div className="patient-feature-chips" role="tablist" aria-label="Patient feature mode">
+          <button
+            type="button"
+            className={`patient-feature-chip ${patientFeatureMode === 'list' ? 'active' : ''}`}
+            onClick={() => setPatientFeatureMode('list')}
+            aria-pressed={patientFeatureMode === 'list'}
+          >
+            Existing Patients
+          </button>
+          <button
+            type="button"
+            className={`patient-feature-chip ${patientFeatureMode === 'add' ? 'active' : ''}`}
+            onClick={() => setPatientFeatureMode('add')}
+            aria-pressed={patientFeatureMode === 'add'}
+          >
+            Add Patient
+          </button>
+        </div>
+      </div>
+
+      {patientFeatureMode === 'add' ? (
+        <div className="doctor-add-patient-form">
+          <input
+            value={newPatient.name}
+            onChange={(event) => setNewPatient((prev) => ({ ...prev, name: event.target.value }))}
+            placeholder="Patient name"
+          />
+          <input
+            value={newPatient.id}
+            onChange={(event) => setNewPatient((prev) => ({ ...prev, id: event.target.value }))}
+            placeholder="Patient ID (e.g. P-1299)"
+          />
+          <button
+            type="button"
+            className="doctor-add-save-btn"
+            onClick={() => {
+              const saved = addPatient();
+              if (saved) setPatientFeatureMode('list');
+            }}
+          >
+            Save Patient
+          </button>
+          {addPatientError ? <p className="doctor-add-error">{addPatientError}</p> : null}
+        </div>
+      ) : (
+        <>
+          <input
+            id="patient-search"
+            className="patient-search-input"
+            value={patientSearch}
+            onChange={(event) => setPatientSearch(event.target.value)}
+            placeholder="Search by name or ID"
+          />
+          <div className="doctor-quick-patient-list">
+            {filteredPatients.length ? filteredPatients.map((patient) => (
+              <button
+                key={patient.id}
+                type="button"
+                className={`doctor-quick-patient ${patient.id === activePatientId ? 'active' : ''}`}
+                onClick={() => setActivePatientId(patient.id)}
+              >
+                <span>{patient.name}</span>
+                <small>{patient.id}</small>
+              </button>
+            )) : <p className="doctor-empty-patients">No patients match this search.</p>}
+          </div>
+        </>
+      )}
+
+      <div className="doctor-quick-options">
+        <button type="button" onClick={() => setDoctorSection('prediction_result')}>Go to Result</button>
+        <button type="button" onClick={() => setDoctorSection('recommendation')}>Go to Recommendation</button>
+      </div>
+    </div>
+  );
+}
+
 function PatientSectionView(props) {
   const {
     activeSection,
@@ -960,7 +1117,7 @@ function PatientSectionView(props) {
     onRunPrediction,
   } = props;
 
-  if (activeSection === 'input_hub' || ['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
+  if (activeSection === 'input_hub' || ['manual', 'clinical', 'report'].includes(activeSection)) {
     return (
       <div className="doctor-input-stack doctor-input-stack--single">
         <InputWorkspace
@@ -982,8 +1139,26 @@ function PatientSectionView(props) {
     );
   }
 
+  if (activeSection === 'image_classification') {
+    return (
+      <div className="doctor-input-stack doctor-input-stack--single">
+        <ImageClassificationPanel
+          error={error}
+          imageFile={imageFile}
+          loading={loading}
+          result={featureResults.image}
+          setImageFile={setImageFile}
+          onRunPrediction={() => {
+            setMode('image');
+            onRunPrediction('image');
+          }}
+        />
+      </div>
+    );
+  }
+
   if (activeSection === 'prediction_result') {
-    const modeResult = featureResults[mode] || result;
+    const modeResult = featureResults.manual || featureResults.columns || featureResults.pdf || result;
     return (
       <div className="doctor-input-stack">
         <StructuredPredictionResult
@@ -1046,7 +1221,6 @@ function InputWorkspace(props) {
     { value: 'manual', label: 'Narrative Cycle AI' },
     { value: 'columns', label: 'Clinical Signal Matrix' },
     { value: 'pdf', label: 'Report Intelligence' },
-    { value: 'image', label: 'Embryo Image Lens' },
   ];
 
   return (
@@ -1094,7 +1268,6 @@ function InputWorkspace(props) {
       )}
 
       {mode === 'pdf' && <FileDrop accept=".pdf,.txt" file={pdfFile} icon={FileText} label="Upload PDF or text report" onChange={setPdfFile} />}
-      {mode === 'image' && <FileDrop accept="image/*" file={imageFile} icon={ImageIcon} label="Upload scan, lab snapshot, or treatment image" onChange={setImageFile} />}
 
       <div className="input-actions">
         <Button className="btn-primary" loading={loading} type="button" onClick={onRunPrediction} disabled={loading}>
@@ -1109,11 +1282,10 @@ function InputWorkspace(props) {
 function modeTitle(mode) {
   if (mode === 'columns') return 'Clinical Signal Input';
   if (mode === 'pdf') return 'Report Intelligence Upload';
-  if (mode === 'image') return 'Embryo Image Lens Upload';
   return 'Narrative Cycle Input';
 }
 
-function StructuredPredictionResult({ imageFile, loading, mode, probability, result }) {
+function StructuredPredictionResult({ loading, probability, result }) {
   const probabilityValue = typeof result?.probability === 'number'
     ? Math.round((result.probability <= 1 ? result.probability * 100 : result.probability))
     : probability;
@@ -1123,11 +1295,30 @@ function StructuredPredictionResult({ imageFile, loading, mode, probability, res
         <h3>Feature Prediction Result</h3>
         <span>{probabilityValue ? `${probabilityValue}%` : 'Pending'}</span>
       </div>
-      {mode === 'image' ? (
-        <ImageClassificationView result={result} imageFile={imageFile} loading={loading} />
-      ) : (
-        <ResultCard result={result} loading={loading} />
-      )}
+      <ResultCard result={result} loading={loading} />
+    </section>
+  );
+}
+
+function ImageClassificationPanel({ error, imageFile, loading, result, setImageFile, onRunPrediction }) {
+  return (
+    <section className="panel compact-panel">
+      <h3>Embryo Image Classification</h3>
+      <p>Upload embryo imagery to classify as Pregnant or Non-pregnant with visual reasoning.</p>
+      <FileDrop
+        accept="image/*"
+        file={imageFile}
+        icon={ImageIcon}
+        label="Upload scan, lab snapshot, or treatment image"
+        onChange={setImageFile}
+      />
+      <div className="input-actions">
+        <Button className="btn-primary" loading={loading} type="button" onClick={onRunPrediction} disabled={loading}>
+          {loading ? 'Analysing image...' : 'Run Image Classification'} <ArrowRight size={14} />
+        </Button>
+        {error ? <p className="error">{error}</p> : <p>This module analyzes only image signals and Grad-CAM focus regions.</p>}
+      </div>
+      <ImageClassificationView result={result} imageFile={imageFile} loading={loading} />
     </section>
   );
 }
@@ -1159,9 +1350,13 @@ function ImageClassificationView({ result, imageFile, loading }) {
     ? `${(result.probability * 100).toFixed(1)}%`
     : result.probability || 'Not available';
 
-  const explanation = typeof result.explanation === 'string'
+  const explanationSummary = typeof result.explanation === 'string'
     ? result.explanation
     : result.explanation?.summary || 'No explanation available.';
+  const keyDrivers = Array.isArray(result?.explanation?.key_drivers) ? result.explanation.key_drivers : [];
+  const positiveFactors = Array.isArray(result?.explanation?.positive_factors) ? result.explanation.positive_factors : [];
+  const negativeFactors = Array.isArray(result?.explanation?.negative_factors) ? result.explanation.negative_factors : [];
+  const finalGuidance = typeof result?.explanation?.final_guidance === 'string' ? result.explanation.final_guidance : '';
 
   const uploadedPreview = imageFile ? URL.createObjectURL(imageFile) : null;
 
@@ -1195,7 +1390,40 @@ function ImageClassificationView({ result, imageFile, loading }) {
       </div>
       <div className="block">
         <h3>Explanation</h3>
-        <p>{explanation}</p>
+        <p>{explanationSummary}</p>
+        {keyDrivers.length ? (
+          <div className="explain-detail-block">
+            <h4>Key Drivers</h4>
+            <ul className="recommendations">
+              {keyDrivers.map((item, index) => <li key={`driver-${index}`}>{item}</li>)}
+            </ul>
+          </div>
+        ) : null}
+        {positiveFactors.length ? (
+          <div className="explain-detail-block">
+            <h4>Positive Factors</h4>
+            <ul className="recommendations">
+              {positiveFactors.map((item, index) => (
+                <li key={`pos-${index}`}>
+                  <strong>{item.factor || 'Supportive finding'}:</strong> {item.why_it_helps || item.why_it_matters || 'Supports the predicted pattern.'}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {negativeFactors.length ? (
+          <div className="explain-detail-block">
+            <h4>Risk Factors</h4>
+            <ul className="recommendations">
+              {negativeFactors.map((item, index) => (
+                <li key={`neg-${index}`}>
+                  <strong>{item.factor || 'Risk finding'}</strong> ({item.severity || 'moderate'}): {item.impact || item.why_it_matters || 'Potentially impacts IVF success.'}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {finalGuidance ? <p><strong>Clinical guidance:</strong> {finalGuidance}</p> : null}
       </div>
     </div>
   );
@@ -1214,6 +1442,10 @@ function FileDrop({ accept, file, icon: Icon, label, onChange }) {
 }
 
 function TrackingPanel({ trackingDone, setTrackingDone, appointments, setAppointments, activePatientId }) {
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [form, setForm] = useState({
     title: 'Follicle monitoring scan',
     date: '',
@@ -1221,6 +1453,31 @@ function TrackingPanel({ trackingDone, setTrackingDone, appointments, setAppoint
     note: '',
   });
   const [message, setMessage] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+
+  const monthLabel = visibleMonth.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const firstDayWeekIndex = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1).getDay();
+  const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+
+  const normalizeDateKey = (value) => {
+    if (!value) return '';
+    const isoMatch = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toISOString().slice(0, 10);
+  };
+
+  const appointmentDaySet = new Set((appointments || []).map((item) => normalizeDateKey(item.date)).filter(Boolean));
+  const selectedDayAppointments = (appointments || []).filter((item) => normalizeDateKey(item.date) === selectedDate);
+  const monthCells = Array.from({ length: firstDayWeekIndex + daysInMonth }, (_, index) => {
+    const day = index - firstDayWeekIndex + 1;
+    if (day < 1) return null;
+    const monthValue = visibleMonth.getMonth() + 1;
+    const dayValue = String(day).padStart(2, '0');
+    const monthKey = `${visibleMonth.getFullYear()}-${String(monthValue).padStart(2, '0')}-${dayValue}`;
+    return { day, key: monthKey };
+  });
 
   const schedule = async () => {
     if (!form.date || !form.time) {
@@ -1247,13 +1504,60 @@ function TrackingPanel({ trackingDone, setTrackingDone, appointments, setAppoint
     <section className="panel compact-panel">
       <h3>Treatment Tracking Calendar</h3>
       <p>Plan and publish patient appointments from this section.</p>
-      <div className="timeline">
+
+      <div className="tracking-progress-inline">
         {treatmentSteps.map((step, index) => (
           <button className={index < trackingDone ? 'done' : ''} key={step} type="button" onClick={() => setTrackingDone(index + 1)}>
-            <CheckCircle2 size={16} /> {step}
+            {step}
           </button>
         ))}
       </div>
+
+      <div className="tracking-calendar-shell">
+        <div className="tracking-calendar-head">
+          <button type="button" onClick={() => setVisibleMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}>
+            Prev
+          </button>
+          <strong>{monthLabel}</strong>
+          <button type="button" onClick={() => setVisibleMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>
+            Next
+          </button>
+        </div>
+        <div className="tracking-weekdays">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <span key={day}>{day}</span>)}
+        </div>
+        <div className="tracking-calendar-grid">
+          {monthCells.map((cell, idx) => {
+            if (!cell) return <div key={`empty-${idx}`} className="tracking-day tracking-day--empty" />;
+            const isSelected = selectedDate === cell.key;
+            const hasAppointment = appointmentDaySet.has(cell.key);
+            return (
+              <button
+                key={cell.key}
+                type="button"
+                className={`tracking-day ${isSelected ? 'is-selected' : ''} ${hasAppointment ? 'has-appointment' : ''}`}
+                onClick={() => {
+                  setSelectedDate(cell.key);
+                  setForm((prev) => ({ ...prev, date: cell.key }));
+                }}
+              >
+                <span>{cell.day}</span>
+                {hasAppointment ? <i /> : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {selectedDate ? (
+        <div className="tracking-selected-day">
+          <strong>Appointments on {selectedDate}</strong>
+          {selectedDayAppointments.length ? selectedDayAppointments.map((item) => (
+            <span key={item.id}>{item.time} - {item.title}</span>
+          )) : <span>No appointments for this day.</span>}
+        </div>
+      ) : null}
+
       <div className="calendar-form-grid">
         <label>
           Appointment
@@ -1272,7 +1576,9 @@ function TrackingPanel({ trackingDone, setTrackingDone, appointments, setAppoint
           <input value={form.note} onChange={(event) => setForm((p) => ({ ...p, note: event.target.value }))} placeholder="Optional note" />
         </label>
       </div>
-      <button className="btn-primary" type="button" onClick={schedule}>Schedule Next Appointment</button>
+      <div className="tracking-form-actions">
+        <button className="btn-primary" type="button" onClick={schedule}>Schedule Next Appointment</button>
+      </div>
       {message ? <p className="request-status">{message}</p> : null}
       <div className="appointment-list">
         {appointments.map((item) => (

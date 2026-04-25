@@ -67,26 +67,30 @@ function directionArrow(direction) {
   return '→';
 }
 
+function compactNodeName(name = '') {
+  const txt = String(name || '').trim();
+  if (!txt) return 'Unknown';
+  return txt.length > 24 ? `${txt.slice(0, 24)}...` : txt;
+}
+
 /** Multi-line Cytoscape label: decision unit summary */
 function buildClinicalLabel(n) {
-  const name = n.name || n.id;
+  const name = compactNodeName(n.name || n.id);
   const arrow = directionArrow(n.direction);
   const im = n.impactLevel || '';
-  const conf = n.confidence != null ? Number(n.confidence).toFixed(2) : '';
 
   if (n.label === 'Outcome' && name === 'IVF Success') {
-    const lines = [name, `${arrow} overall outlook`, conf ? `Conf: ${conf}` : ''].filter(Boolean);
+    const lines = [name, `${arrow} overall outlook`].filter(Boolean);
     return lines.join('\n');
   }
 
   if (n.label === 'Patient' || String(n.id).startsWith('Patient:')) {
-    return [name, conf ? `Conf: ${conf}` : ''].filter(Boolean).join('\n');
+    return name;
   }
 
-  if (!im && !conf) return name;
+  if (!im) return name;
   const mid = im ? `${arrow} ${im} impact` : `${arrow}`;
-  const last = conf ? `Conf: ${conf}` : '';
-  return [name, mid, last].filter(Boolean).join('\n');
+  return [name, mid].filter(Boolean).join('\n');
 }
 
 function matchNarrativeForNode(meta, explanation) {
@@ -320,18 +324,19 @@ const GraphView = ({ graphData, criticalPath, explanation }) => {
   }, [graphData, rawLinks, effectivePathFilter, criticalPath, explainIds]);
 
   const layoutConfig = useMemo(() => {
-    const base = { animate: false, padding: 28, fit: true };
+    const base = { animate: false, padding: 48, fit: true, nodeDimensionsIncludeLabels: true };
     if (layoutName === 'breadthfirst') {
       return {
         ...base,
         name: 'breadthfirst',
         directed: true,
-        spacingFactor: 1.75,
+        spacingFactor: 2.35,
         avoidOverlap: true,
+        avoidOverlapPadding: 18,
       };
     }
     if (layoutName === 'cose') {
-      return { ...base, name: 'cose', nodeRepulsion: 5200, idealEdgeLength: 120, randomize: false };
+      return { ...base, name: 'cose', nodeRepulsion: 7000, idealEdgeLength: 180, randomize: false };
     }
     if (layoutName === 'circle') {
       return { ...base, name: 'circle' };
@@ -498,21 +503,29 @@ const GraphView = ({ graphData, criticalPath, explanation }) => {
     : null;
 
   const stylesheet = [
-          {
-            selector: 'node',
-            style: {
+    {
+      selector: 'node',
+      style: {
         'background-color': 'data(rawColor)',
-              label: 'data(label)',
-              'font-size': '10px',
-              'text-wrap': 'wrap',
-        'text-max-width': '112px',
-              color: '#091022',
-        'font-weight': 600,
-        'text-outline-width': 1,
-        'text-outline-color': '#fff',
-        width: 'label',
-        height: 'label',
-        padding: '10px',
+        label: 'data(label)',
+        'font-size': '11px',
+        'text-wrap': 'wrap',
+        'text-max-width': '122px',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'text-justification': 'center',
+        color: '#0b1725',
+        'font-weight': 700,
+        'line-height': 1.15,
+        'min-zoomed-font-size': 9,
+        'text-outline-width': 0,
+        'text-background-color': '#ffffff',
+        'text-background-opacity': 0.96,
+        'text-background-shape': 'roundrectangle',
+        'text-background-padding': '3px',
+        width: 150,
+        height: 64,
+        padding: '8px',
         shape: 'round-rectangle',
         'shadow-color': 'rgba(20, 184, 166, 0.35)',
         'shadow-blur': 12,
@@ -554,13 +567,13 @@ const GraphView = ({ graphData, criticalPath, explanation }) => {
       selector: 'node.focus',
       style: { opacity: 1, 'z-index': 999 },
     },
-          {
-            selector: 'edge',
-            style: {
+    {
+      selector: 'edge',
+      style: {
         width: 'mapData(weight, 0.35, 1, 1.5, 6)',
         'line-color': '#7a8a99',
         'target-arrow-color': '#7a8a99',
-              'target-arrow-shape': 'triangle',
+        'target-arrow-shape': 'triangle',
         'curve-style': 'unbundled-bezier',
         'arrow-scale': 1.1,
         opacity: 0.88,
@@ -683,7 +696,7 @@ const GraphView = ({ graphData, criticalPath, explanation }) => {
           <CytoscapeComponent
             elements={elements}
             className="graph-view-cy"
-            style={{ width: '100%', height: expanded ? 400 : 360 }}
+            style={{ width: '100%', height: expanded ? 700 : 560 }}
             layout={layoutConfig}
             stylesheet={stylesheet}
             cy={cyHandler}
