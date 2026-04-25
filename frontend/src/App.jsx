@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
   Activity,
   ArrowLeft,
@@ -21,13 +22,16 @@ import {
 } from 'lucide-react';
 import GraphView from './components/GraphView';
 import ResultCard from './components/ResultCard';
+import Button from './components/ui/Button';
 import {
   createAppointment,
   getAppointments,
+  getLoginExampleEmail,
   getNotifications,
   getPrediction,
   getPredictionFromImage,
   getPredictionFromPdf,
+  loginDemo,
   markNotificationRead,
 } from './api';
 import './App.css';
@@ -72,20 +76,18 @@ const treatmentSteps = [
 ];
 
 const doctorSections = [
-  { id: 'manual', label: 'Narrative Cycle AI', icon: ClipboardList },
-  { id: 'clinical', label: 'Clinical Signal Matrix', icon: BarChart3 },
-  { id: 'report', label: 'Report Intelligence', icon: FileText },
-  { id: 'image', label: 'Embryo Image Lens', icon: ImageIcon },
+  { id: 'input_hub', label: 'Prediction Inputs', icon: ClipboardList },
+  { id: 'prediction_result', label: 'Prediction Result', icon: BarChart3 },
+  { id: 'knowledge_graph', label: 'Knowledge Graph', icon: Activity },
   { id: 'tracker', label: 'Treatment Tracking', icon: CalendarDays },
   { id: 'recommendation', label: 'Diet + Med Recommendations', icon: Pill },
   { id: 'history', label: 'Patient Details + History', icon: UsersRound },
 ];
 
 const patientSections = [
-  { id: 'manual', label: 'Narrative Cycle AI', icon: ClipboardList },
-  { id: 'clinical', label: 'Clinical Signal Matrix', icon: BarChart3 },
-  { id: 'report', label: 'Report Intelligence', icon: FileText },
-  { id: 'image', label: 'Embryo Image Lens', icon: ImageIcon },
+  { id: 'input_hub', label: 'Prediction Inputs', icon: ClipboardList },
+  { id: 'prediction_result', label: 'Prediction Result', icon: BarChart3 },
+  { id: 'knowledge_graph', label: 'Knowledge Graph', icon: Activity },
   { id: 'tracker', label: 'Tracker Calendar', icon: CalendarDays },
   { id: 'recommendation', label: 'Diet + Med Recommendations', icon: Pill },
   { id: 'history', label: 'Patient Details + History', icon: UsersRound },
@@ -102,8 +104,8 @@ function App() {
   const [loginRole, setLoginRole] = useState('doctor');
   const [activePatientId, setActivePatientId] = useState(patientRoster[0].id);
   const [mode, setMode] = useState('manual');
-  const [doctorSection, setDoctorSection] = useState('manual');
-  const [patientSection, setPatientSection] = useState('manual');
+  const [doctorSection, setDoctorSection] = useState('input_hub');
+  const [patientSection, setPatientSection] = useState('input_hub');
   const [patientSearch, setPatientSearch] = useState('');
   const [manualInput, setManualInput] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
@@ -201,6 +203,9 @@ function App() {
         setFeatureResults((previous) => ({ ...previous, [mode]: nextResult }));
       }
       setValidatedRecommendation(false);
+      if (nextResult && view === 'doctor') {
+        setDoctorSection('recommendation');
+      }
     } catch (err) {
       setError(err.message || 'Prediction request failed.');
     } finally {
@@ -213,11 +218,11 @@ function App() {
   const openPatient = () => openLogin('patient');
   const openDoctorDashboard = () => {
     setView('doctor');
-    setDoctorSection('manual');
+    setDoctorSection('input_hub');
   };
   const openPatientDashboard = () => {
     setView('patient');
-    setPatientSection('manual');
+    setPatientSection('input_hub');
   };
 
   const withNav = (content) => (
@@ -236,17 +241,23 @@ function App() {
   );
 
   if (view === 'login') {
-    return withNav(
-      <LoginPage
-        role={loginRole}
-        onBack={goHome}
-        onLogin={() => {
-          setView(loginRole);
-          if (loginRole === 'doctor') setDoctorSection('manual');
-          else setPatientSection('manual');
-        }}
-        onSwitchRole={() => setLoginRole((role) => (role === 'doctor' ? 'patient' : 'doctor'))}
-      />
+    return (
+      <div className="login-viewport">
+        {withNav(
+          <LoginPage
+            role={loginRole}
+            onBack={goHome}
+            onLoginSuccess={(user) => {
+              const nextView = loginRole;
+              setView(nextView);
+              if (nextView === 'doctor') setDoctorSection('input_hub');
+              else setPatientSection('input_hub');
+              if (user?.patient_id) setActivePatientId(user.patient_id);
+            }}
+            onSwitchRole={() => setLoginRole((r) => (r === 'doctor' ? 'patient' : 'doctor'))}
+          />
+        )}
+      </div>
     );
   }
 
@@ -300,28 +311,49 @@ function CommonNav({ activeView, activeLoginRole, onHome, onDoctor, onPatient, o
   const isLanding = activeView === 'landing';
 
   return (
-    <nav className="common-nav">
-      <button className="common-brand" type="button" onClick={onHome}>
-        <span className="brand-mark-shape" />
-        <strong>Progena IVF</strong>
-      </button>
-      <div className="common-nav-links">
-        {isLanding ? (
-          <>
-            <a href="#about">About us</a>
-            <a href="#services">Our Services</a>
-            <a href="#steps">How it Works</a>
-            <button className="nav-login-btn" type="button" onClick={onDoctor}>Login</button>
-          </>
-        ) : (
-          <>
-            <button className={activeView === 'landing' ? 'active' : ''} type="button" onClick={onHome}>Home</button>
-            <button className={activeView === 'login' && activeLoginRole === 'doctor' ? 'active' : ''} type="button" onClick={onDoctor}>Doctor Login</button>
-            <button className={activeView === 'login' && activeLoginRole === 'patient' ? 'active' : ''} type="button" onClick={onPatient}>Patient Login</button>
-            <button className={activeView === 'doctor' ? 'active' : ''} type="button" onClick={onDoctorDashboard}>Doctor Dashboard</button>
-            <button className={activeView === 'patient' ? 'active' : ''} type="button" onClick={onPatientDashboard}>Patient Dashboard</button>
-          </>
-        )}
+    <nav className="nav common-nav">
+      <div className="nav-inner">
+        <button className="nav-logo common-brand" type="button" onClick={onHome}>
+          <span className="logo-mark brand-mark-shape">
+            <HeartPulse size={14} />
+          </span>
+          <strong>Progena IVF</strong>
+        </button>
+        <div className="nav-links common-nav-links">
+          {isLanding ? (
+            <>
+              <a className="nav-link" href="#about">About us</a>
+              <a className="nav-link" href="#services">Our Services</a>
+              <a className="nav-link" href="#steps">How it Works</a>
+              <span className="nav-sep" />
+              <button className="nav-cta nav-login-btn" type="button" onClick={onDoctor}>Login</button>
+            </>
+          ) : (
+            <>
+              <button className={`nav-link ${activeView === 'landing' ? 'active' : ''}`} type="button" onClick={onHome}>Home</button>
+              <button className={`nav-link ${activeView === 'login' && activeLoginRole === 'doctor' ? 'active' : ''}`} type="button" onClick={onDoctor}>Doctor Login</button>
+              <button className={`nav-link ${activeView === 'login' && activeLoginRole === 'patient' ? 'active' : ''}`} type="button" onClick={onPatient}>Patient Login</button>
+              <button
+                className={`nav-link nav-icon-link ${activeView === 'doctor' ? 'active' : ''}`}
+                type="button"
+                onClick={onDoctorDashboard}
+                title="Doctor Dashboard"
+                aria-label="Doctor Dashboard"
+              >
+                <Stethoscope size={19} />
+              </button>
+              <button
+                className={`nav-link nav-icon-link ${activeView === 'patient' ? 'active' : ''}`}
+                type="button"
+                onClick={onPatientDashboard}
+                title="Patient Dashboard"
+                aria-label="Patient Dashboard"
+              >
+                <UserRound size={19} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );
@@ -330,87 +362,114 @@ function CommonNav({ activeView, activeLoginRole, onHome, onDoctor, onPatient, o
 function LandingPage({ onDoctor, onPatient }) {
   return (
     <main className="wecare-stage">
-      <section className="wecare-page">
-        <section className="wecare-hero">
-          <div className="hero-copy">
-            <span className="mini-kicker">Fertility intelligence</span>
-            <h1>Find IVF insights that can guide every cycle.</h1>
-            <p>
-              Progena IVF helps doctors and patients move from raw reports to outcome prediction,
-              treatment tracking, graph reasoning, and validated care guidance.
-            </p>
-            <div className="role-cards">
-              <button className="role-card" type="button" onClick={onDoctor}>
-                <Stethoscope size={22} />
-                <div>
-                  <strong>Doctor View</strong>
-                  <small>Run predictions, validate recommendations, manage patient history.</small>
-                </div>
-                <ArrowRight size={16} />
-              </button>
-              <button className="role-card" type="button" onClick={onPatient}>
-                <UserRound size={22} />
-                <div>
-                  <strong>Patient View</strong>
-                  <small>Review reports, track treatment, connect with the doctor.</small>
-                </div>
-                <ArrowRight size={16} />
-              </button>
-            </div>
+      <section className="screen visible wecare-page">
+        <motion.section 
+          className="hero wecare-hero"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
+          <div className="hero-left hero-copy">
+            <motion.div 
+              className="hero-eyebrow mini-kicker"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              <span className="hero-eyebrow-text">Clinical IVF intelligence</span>
+              <span className="hero-eyebrow-line" />
+            </motion.div>
+            <motion.h1 
+              className="hero-h1"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+            >
+              From first consult to transfer day, make every IVF decision with confidence.
+            </motion.h1>
+            <motion.p 
+              className="hero-sub"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+            >
+              Progena brings prediction, report understanding, treatment tracking, and doctor-validated recommendations into one clear workflow for clinics and patients.
+            </motion.p>
+            <motion.div 
+              className="hero-actions role-cards"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
+            >
+              <Button className="btn btn-primary interactive-element" onClick={onDoctor}>
+                Start as Doctor <ArrowRight size={16} />
+              </Button>
+              <Button variant="ghost" className="btn btn-secondary interactive-element" onClick={onPatient}>
+                Open Patient Portal <ArrowRight size={16} />
+              </Button>
+            </motion.div>
+            <motion.div 
+              className="hero-micro-proof"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.0, duration: 0.8 }}
+            >
+              <span><CheckCircle2 size={16} /> Explainable outputs</span>
+              <span><CheckCircle2 size={16} /> Role-gated access</span>
+              <span><CheckCircle2 size={16} /> Longitudinal cycle tracking</span>
+            </motion.div>
+            <motion.div 
+              className="hero-trust"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2, duration: 0.8 }}
+            >
+              <div className="trust-avatars">
+                <span className="trust-avatar" style={{ background: '#14b8a6' }}>IVF</span>
+                <span className="trust-avatar" style={{ background: '#0f766e' }}>AI</span>
+                <span className="trust-avatar" style={{ background: '#0d9488' }}>MD</span>
+              </div>
+              Trusted by fertility specialists and care teams.
+            </motion.div>
           </div>
-          <HeroImagePanel />
-          <span className="decor decor-one" />
-          <span className="decor decor-two" />
-          <span className="decor decor-three" />
-        </section>
+          <div className="hero-right">
+            <HeroImagePanel />
+          </div>
+        </motion.section>
 
-        <section className="review-band" id="about">
-          <div className="review-visual">
-            <div className="doctor-abstract" />
-            <div className="review-card card-a">
-              <UserRound size={18} />
-              <span>Personalized IVF tracking</span>
-            </div>
-            <div className="review-card card-b">
-              <HeartPulse size={18} />
-              <span>Prediction output with explanation</span>
-            </div>
-          </div>
-          <div className="section-copy">
-            <span className="mini-kicker">User reviews</span>
-            <h2>Read the clearest IVF care pathway from one place.</h2>
-            <p>
-              Doctors can analyse manual notes, clinical fields, PDFs, and images. Patients see
-              only the reports and guidance that the doctor has reviewed.
-            </p>
-            <button className="btn-primary" type="button" onClick={onDoctor}>See specialist tools <ArrowRight size={14} /></button>
-          </div>
-        </section>
+        <motion.section 
+          className="stats-bar stats-band"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+        >
+          <StatCard value="850+" label="Clinical signals interpreted" />
+          <StatCard value="30k+" label="Structured report fields" />
+          <StatCard value="24x7" label="Always-on decision support" />
+        </motion.section>
 
-        <section className="steps-section" id="steps">
-          <span className="mini-kicker">Fastest solution</span>
-          <h2>4 easy steps to get your IVF Solution</h2>
-          <div className="step-grid">
-            <StepCard icon={ClipboardList} title="Add patient data" text="Manual notes, clinical fields, report PDFs, or image files." />
-            <StepCard icon={BarChart3} title="Run prediction" text="Use the existing IVF model output and explanation layer." />
-            <StepCard icon={CalendarDays} title="Track treatment" text="Mark appointments and cycle milestones in the dashboard." />
-            <StepCard icon={ShieldCheck} title="Validate guidance" text="Doctor approves diet and medication recommendations." />
-          </div>
-        </section>
-
-        <section className="appointment-band">
-          <div className="section-copy">
-            <span className="mini-kicker">Book workflow</span>
-            <h2>Consult and track IVF progress anytime.</h2>
+        <motion.section 
+          className="review-band appointment-band" 
+          id="about"
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <div className="section-copy hero-copy">
+            <span className="section-eyebrow">Why teams choose Progena</span>
+            <h2 className="h2">One workflow for prediction, review, and patient communication.</h2>
             <p>
-              The dashboard keeps output prediction, report analysis, tracker calendar,
-              3D visualization, doctor details, and recommendations in one interactive flow.
+              Clinical teams can evaluate narrative notes, numeric inputs, PDFs, and embryo imagery in one place. Patients only see approved insights shared by their specialist.
             </p>
             <div className="bullet-list">
-              <span><CheckCircle2 size={16} /> Uniform doctor and patient experience</span>
-              <span><CheckCircle2 size={16} /> Doctor validated patient recommendations</span>
+              <span><CheckCircle2 size={16} /> Consistent doctor and patient journey</span>
+              <span><CheckCircle2 size={16} /> Doctor-validated recommendations only</span>
+              <span><CheckCircle2 size={16} /> Better follow-up with timeline continuity</span>
             </div>
-            <button className="btn-primary" type="button" onClick={onPatient}>Open patient access <ArrowRight size={14} /></button>
+            <Button className="btn btn-primary interactive-element" onClick={onDoctor}>
+              Explore specialist workspace <ArrowRight size={16} />
+            </Button>
           </div>
           <div className="calendar-card">
             <div className="calendar-head">
@@ -425,33 +484,67 @@ function LandingPage({ onDoctor, onPatient }) {
               ))}
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        <section className="stats-band">
-          <StatCard value="850" label="Clinical signals" />
-          <StatCard value="30000+" label="Report fields ready" />
-          <StatCard value="98.4%" label="Interface confidence" />
-        </section>
+        <motion.section 
+          className="steps-section" 
+          id="steps"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <span className="section-eyebrow">How it works</span>
+          <h2>4 steps from intake to validated care guidance</h2>
+          <div className="how-grid step-grid">
+            <StepCard icon={ClipboardList} title="Capture case data" text="Use narrative notes, clinical fields, PDFs, and image uploads." />
+            <StepCard icon={BarChart3} title="Generate prediction" text="Get explainable outcome estimates with key drivers and risk paths." />
+            <StepCard icon={CalendarDays} title="Coordinate treatment" text="Schedule milestones, track progress, and notify patients." />
+            <StepCard icon={ShieldCheck} title="Publish validated guidance" text="Share only clinician-approved recommendations to patient portal." />
+          </div>
+        </motion.section>
 
-        <section className="landing-services" id="services">
+        <section className="landing-services feature-grid animate-slide-up" id="services">
           <ServiceTile icon={ClipboardList} title="Narrative Cycle AI" text="Capture detailed notes and run structured reasoning." />
           <ServiceTile icon={BarChart3} title="Clinical Signal Matrix" text="Submit numeric and clinical fields directly to prediction." />
           <ServiceTile icon={FileText} title="Report Intelligence" text="Upload reports and extract probability with explanation." />
           <ServiceTile icon={ImageIcon} title="Embryo Image Lens" text="Classify uploaded images with confidence and explanation." />
         </section>
 
-        <footer className="landing-footer">
+        <section className="cta-banner animate-fade-in">
+          <h2>Improve IVF coordination without adding workflow overhead.</h2>
+          <p>Bring prediction, evidence review, follow-up planning, and validated guidance into one shared interface.</p>
+          <div className="cta-banner-actions">
+            <Button className="btn btn-primary interactive-element" onClick={onDoctor}>
+              Open doctor tools <ArrowRight size={16} />
+            </Button>
+            <Button variant="ghost" className="btn btn-secondary interactive-element" onClick={onPatient}>
+              Open patient portal <ArrowRight size={16} />
+            </Button>
+          </div>
+        </section>
+
+        <footer className="footer landing-footer">
           <div>
-            <strong>Progena IVF</strong>
-            <p>AI-assisted clinical fertility workflow for doctors and patients.</p>
+            <strong className="footer-col-title">Progena IVF</strong>
+            <p className="footer-tagline">AI-assisted clinical fertility workflow for doctors and patients.</p>
           </div>
           <div>
-            <strong>Care Workflow</strong>
-            <p>Prediction | Analysis | Tracking | Validation</p>
+            <strong className="footer-col-title">Care Workflow</strong>
+            <p className="footer-link">Prediction</p>
+            <p className="footer-link">Analysis</p>
+            <p className="footer-link">Tracking</p>
+            <p className="footer-link">Validation</p>
           </div>
           <div>
-            <strong>Contact</strong>
-            <p>support@progena.ai | +91 90000 00000</p>
+            <strong className="footer-col-title">Patient Support</strong>
+            <p className="footer-link">support@progena.ai</p>
+            <p className="footer-link">+91 90000 00000</p>
+          </div>
+          <div>
+            <strong className="footer-col-title">Specialist Access</strong>
+            <p className="footer-link" role="button" tabIndex={0} onClick={onDoctor} onKeyDown={(event) => event.key === 'Enter' && onDoctor()}>Doctor Login</p>
+            <p className="footer-link" role="button" tabIndex={0} onClick={onPatient} onKeyDown={(event) => event.key === 'Enter' && onPatient()}>Patient Login</p>
           </div>
         </footer>
       </section>
@@ -459,37 +552,96 @@ function LandingPage({ onDoctor, onPatient }) {
   );
 }
 
-function LoginPage({ role, onBack, onLogin, onSwitchRole }) {
+function LoginPage({ role, onBack, onLoginSuccess, onSwitchRole }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoginError('');
+    setPassword('');
+    (async () => {
+      try {
+        const payload = await getLoginExampleEmail(role);
+        if (!cancelled) setEmail(payload.email || '');
+      } catch (_err) {
+        if (!cancelled) {
+          setEmail(role === 'doctor' ? 'doctor@progena.ai' : 'patient@progena.ai');
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoginError('');
+    setAuthBusy(true);
+    try {
+      const payload = await loginDemo({ email: email.trim(), password, role });
+      if (payload?.user) onLoginSuccess(payload.user);
+    } catch (err) {
+      setLoginError(err.message || 'Login failed');
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
   return (
-    <main className="login-root">
-      <section className="login-card">
-        <button type="button" className="btn-back" onClick={onBack}><ArrowLeft size={15} /> Back to Home</button>
-        <div className="login-grid">
-          <div className="login-copy">
-            <span className="tag">{role === 'doctor' ? 'Doctor Access' : 'Patient Access'}</span>
-            <h1>{role === 'doctor' ? 'Secure doctor dashboard login' : 'Secure patient dashboard login'}</h1>
-            <p>
-              {role === 'doctor'
-                ? 'Access manual prediction, report analysis, image classification, tracking, and recommendation validation.'
-                : 'Track appointments, view prediction output, and review doctor-approved guidance.'}
-            </p>
-            <label>
-              Email
-              <input value={role === 'doctor' ? 'doctor@progena.ai' : 'patient@progena.ai'} readOnly />
-            </label>
-            <label>
-              Password
-              <input value="progenaivf" type="password" readOnly />
-            </label>
-            <div className="login-actions">
-              <button className="btn-primary" type="button" onClick={onLogin}>Login</button>
-              <button className="btn-outline" type="button" onClick={onSwitchRole}>
-                Switch to {role === 'doctor' ? 'Patient' : 'Doctor'}
-              </button>
-            </div>
+    <main className="login-root login-root--fit">
+      <section className="auth-wrap login-card login-card--compact">
+        <form className="auth-form-side" onSubmit={handleSubmit}>
+          <button type="button" className="btn-back" onClick={onBack}><ArrowLeft size={15} /> Back to Home</button>
+          <div className="role-toggle">
+            <button className={`role-btn ${role === 'doctor' ? 'active' : ''}`} type="button" onClick={() => role !== 'doctor' && onSwitchRole()}>Doctor</button>
+            <button className={`role-btn ${role === 'patient' ? 'active' : ''}`} type="button" onClick={() => role !== 'patient' && onSwitchRole()}>Patient</button>
           </div>
-          <LoginVisual />
-        </div>
+          <div className="auth-badge">{role === 'doctor' ? 'Doctor Access' : 'Patient Access'}</div>
+          <div className="auth-h2">{role === 'doctor' ? 'Welcome back, Doctor.' : 'Your care portal.'}</div>
+          <div className="auth-sub">
+            {role === 'doctor'
+              ? 'Clinical workspace: predictions, reports, imaging, tracking, and validation.'
+              : 'Appointments, results, and doctor-approved guidance - all in one place.'}
+          </div>
+          <div className="form-field">
+            <label className="form-label">Email</label>
+            <input
+              className="form-input"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              autoComplete="username"
+              required
+            />
+          </div>
+          <div className="form-field">
+            <label className="form-label">Password</label>
+            <input
+              className="form-input"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+            <div className="form-helper">Use your demo credentials from the backend example endpoint.</div>
+          </div>
+          {loginError ? <p className="login-error">{loginError}</p> : null}
+          <div className="login-actions">
+            <button className="btn btn-primary interactive-element" type="submit" disabled={authBusy}>
+              {authBusy ? 'Signing in…' : 'Login'}
+            </button>
+            <button className="btn btn-secondary interactive-element" type="button" onClick={onSwitchRole}>
+              Switch role
+            </button>
+          </div>
+          <div className="auth-demo-hint"><strong>Demo:</strong> Accounts are validated from JSON (no real DB)</div>
+        </form>
+        <LoginVisual role={role} />
       </section>
     </main>
   );
@@ -545,132 +697,136 @@ function HospitalDashboard(props) {
   });
 
   return (
-    <main className="dash-root">
-      <aside className="sidebar">
-        <div className="logo-lockup">
-          <HeartPulse size={22} />
-          <strong>Progena IVF</strong>
-        </div>
-        <div className="sidebar-list">
-          {sectionItems.map((item) => (
-            <button
-              key={item.id}
-              className={`sidebar-item ${activeSection === item.id ? 'active' : ''}`}
-              type="button"
-              onClick={() => {
-                if (isDoctor) setDoctorSection(item.id);
-                else setPatientSection(item.id);
-                if (item.id === 'manual') setMode('manual');
-                if (item.id === 'clinical') setMode('columns');
-                if (item.id === 'report') setMode('pdf');
-                if (item.id === 'image') setMode('image');
-              }}
-            >
-              <item.icon size={17} />
-              <span>{item.label}</span>
+    <main className="screen visible">
+      <section className="dash-layout dash-root">
+        <aside className="dash-sidebar sidebar">
+          <div className="sidebar-head logo-lockup">
+            <button className="sidebar-logo" type="button" onClick={onBack}>
+              <HeartPulse size={20} />
+              <strong>Progena IVF</strong>
             </button>
-          ))}
-        </div>
-        {isDoctor ? (
-          <div className="patient-search-block">
-            <label htmlFor="patient-search">Find patient by ID</label>
-            <input
-              id="patient-search"
-              value={patientSearch}
-              onChange={(event) => setPatientSearch(event.target.value)}
-              placeholder="Search P-1042"
-            />
-            <div className="sidebar-patient-results">
-              {filteredPatients.map((patient) => (
-                <button
-                  className={patient.id === activePatientId ? 'active' : ''}
-                  key={patient.id}
-                  type="button"
-                  onClick={() => setActivePatientId(patient.id)}
-                >
-                  <strong>{patient.id}</strong>
-                  <span>{patient.name}</span>
-                </button>
-              ))}
+          </div>
+          <div className="sidebar-section">{isDoctor ? 'Doctor modules' : 'Patient modules'}</div>
+          <div className="sidebar-list">
+            {sectionItems.map((item) => (
+              <button
+                key={item.id}
+                className={`sidebar-item ${activeSection === item.id ? 'active' : ''}`}
+                type="button"
+                onClick={() => {
+                  if (isDoctor) setDoctorSection(item.id);
+                  else setPatientSection(item.id);
+                  if (item.id === 'input_hub') setMode('manual');
+                }}
+              >
+                <item.icon size={16} className="sidebar-icon" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+          {isDoctor ? (
+            <div className="doctor-quick-panel">
+              <label htmlFor="patient-search" className="doctor-quick-label">Find patient</label>
+              <input
+                id="patient-search"
+                className="patient-search-input"
+                value={patientSearch}
+                onChange={(event) => setPatientSearch(event.target.value)}
+                placeholder="Search by name or ID"
+              />
+              <div className="doctor-quick-patient-list">
+                {filteredPatients.slice(0, 5).map((patient) => (
+                  <button
+                    key={patient.id}
+                    type="button"
+                    className={`doctor-quick-patient ${patient.id === activePatientId ? 'active' : ''}`}
+                    onClick={() => setActivePatientId(patient.id)}
+                  >
+                    <span>{patient.name}</span>
+                    <small>{patient.id}</small>
+                  </button>
+                ))}
+              </div>
+              <div className="doctor-quick-options">
+                <button type="button" onClick={() => setDoctorSection('prediction_result')}>Go to Result</button>
+                <button type="button" onClick={() => setDoctorSection('recommendation')}>Go to Recommendation</button>
+              </div>
             </div>
-          </div>
-        ) : null}
-        <button className="btn-outline" type="button" onClick={onBack}>Back to Landing</button>
-      </aside>
+          ) : null}
+          <button className="btn-outline" type="button" onClick={onBack}>Back to Landing</button>
+        </aside>
 
-      <section className="dash-content">
-        <header className="dash-header">
-          <div>
-            <span className="tag">{isDoctor ? 'Doctor Dashboard' : 'Patient Dashboard'}</span>
-            <h2>{isDoctor ? 'Clinical workflow control center' : `Welcome, ${activePatient.name}`}</h2>
+        <section className="dash-content">
+          <div className="dash-body">
+            <section className="dash-panel visible">
+              {isDoctor ? (
+                <DoctorSectionView
+                  activeSection={activeSection}
+                  activePatient={activePatient}
+                  activePatientId={activePatientId}
+                  error={error}
+                  imageFile={imageFile}
+                  loading={loading}
+                  manualInput={manualInput}
+                  mode={mode}
+                  setMode={setMode}
+                  pdfFile={pdfFile}
+                  probability={probability}
+                  result={result}
+                  featureResults={featureResults}
+                  appointments={appointments}
+                  setImageFile={setImageFile}
+                  setManualInput={setManualInput}
+                  setPdfFile={setPdfFile}
+                  setStructured={setStructured}
+                  setTrackingDone={setTrackingDone}
+                  setValidatedRecommendation={setValidatedRecommendation}
+                  setAppointments={setAppointments}
+                  structured={structured}
+                  trackingDone={trackingDone}
+                  validatedRecommendation={validatedRecommendation}
+                  featureResults={featureResults}
+                  appointments={appointments}
+                  notifications={notifications}
+                  setNotifications={setNotifications}
+                  onRunPrediction={onRunPrediction}
+                />
+              ) : (
+                <PatientSectionView
+                  activeSection={activeSection}
+                  activePatient={activePatient}
+                  activePatientId={activePatientId}
+                  probability={probability}
+                  recommendations={recommendations}
+                  result={result}
+                  error={error}
+                  imageFile={imageFile}
+                  loading={loading}
+                  manualInput={manualInput}
+                  mode={mode}
+                  setMode={setMode}
+                  pdfFile={pdfFile}
+                  setImageFile={setImageFile}
+                  setManualInput={setManualInput}
+                  setPdfFile={setPdfFile}
+                  setStructured={setStructured}
+                  structured={structured}
+                  trackingDone={trackingDone}
+                  validatedRecommendation={validatedRecommendation}
+                  featureResults={featureResults}
+                  appointments={appointments}
+                  notifications={notifications}
+                  setNotifications={setNotifications}
+                  onRunPrediction={onRunPrediction}
+                />
+              )}
+            </section>
           </div>
-          <DashboardPulse result={result} probability={probability} isDoctor={isDoctor} />
-        </header>
-
-        {isDoctor ? (
-          <DoctorSectionView
-            activeSection={activeSection}
-            activePatient={activePatient}
-            activePatientId={activePatientId}
-            error={error}
-            imageFile={imageFile}
-            loading={loading}
-            manualInput={manualInput}
-            mode={mode}
-            pdfFile={pdfFile}
-            probability={probability}
-            result={result}
-            featureResults={featureResults}
-            appointments={appointments}
-            setImageFile={setImageFile}
-            setManualInput={setManualInput}
-            setPdfFile={setPdfFile}
-            setStructured={setStructured}
-            setTrackingDone={setTrackingDone}
-            setValidatedRecommendation={setValidatedRecommendation}
-            setAppointments={setAppointments}
-            structured={structured}
-            trackingDone={trackingDone}
-            validatedRecommendation={validatedRecommendation}
-            featureResults={featureResults}
-            appointments={appointments}
-            notifications={notifications}
-            setNotifications={setNotifications}
-            onRunPrediction={onRunPrediction}
-          />
-        ) : (
-          <PatientSectionView
-            activeSection={activeSection}
-            activePatient={activePatient}
-            activePatientId={activePatientId}
-            probability={probability}
-            recommendations={recommendations}
-            result={result}
-            error={error}
-            imageFile={imageFile}
-            loading={loading}
-            manualInput={manualInput}
-            mode={mode}
-            pdfFile={pdfFile}
-            setImageFile={setImageFile}
-            setManualInput={setManualInput}
-            setPdfFile={setPdfFile}
-            setStructured={setStructured}
-            structured={structured}
-            trackingDone={trackingDone}
-            validatedRecommendation={validatedRecommendation}
-            featureResults={featureResults}
-            appointments={appointments}
-            notifications={notifications}
-            setNotifications={setNotifications}
-            onRunPrediction={onRunPrediction}
-          />
-        )}
+        </section>
       </section>
     </main>
   );
 }
-
 function DoctorSectionView(props) {
   const {
     activeSection,
@@ -681,6 +837,7 @@ function DoctorSectionView(props) {
     loading,
     manualInput,
     mode,
+    setMode,
     pdfFile,
     probability,
     result,
@@ -699,16 +856,16 @@ function DoctorSectionView(props) {
     onRunPrediction,
   } = props;
 
-  if (['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
-    const modeResult = featureResults[mode] || result;
+  if (activeSection === 'input_hub' || ['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
     return (
-      <div className="doctor-input-stack">
+      <div className="doctor-input-stack doctor-input-stack--single">
         <InputWorkspace
           error={error}
           imageFile={imageFile}
           loading={loading}
           manualInput={manualInput}
           mode={mode}
+          setMode={setMode}
           pdfFile={pdfFile}
           setImageFile={setImageFile}
           setManualInput={setManualInput}
@@ -717,6 +874,14 @@ function DoctorSectionView(props) {
           structured={structured}
           onRunPrediction={onRunPrediction}
         />
+      </div>
+    );
+  }
+
+  if (activeSection === 'prediction_result') {
+    const modeResult = featureResults[mode] || result;
+    return (
+      <div className="doctor-input-stack">
         <StructuredPredictionResult
           activePatient={activePatient}
           activeSection={activeSection}
@@ -743,6 +908,10 @@ function DoctorSectionView(props) {
         activePatientId={activePatientId}
       />
     );
+  }
+
+  if (activeSection === 'knowledge_graph') {
+    return <KnowledgeGraphPanel result={result} />;
   }
 
   if (activeSection === 'recommendation') {
@@ -775,6 +944,7 @@ function PatientSectionView(props) {
     loading,
     manualInput,
     mode,
+    setMode,
     pdfFile,
     setImageFile,
     setManualInput,
@@ -790,16 +960,16 @@ function PatientSectionView(props) {
     onRunPrediction,
   } = props;
 
-  if (['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
-    const modeResult = featureResults[mode] || result;
+  if (activeSection === 'input_hub' || ['manual', 'clinical', 'report', 'image'].includes(activeSection)) {
     return (
-      <div className="doctor-input-stack">
+      <div className="doctor-input-stack doctor-input-stack--single">
         <InputWorkspace
           error={error}
           imageFile={imageFile}
           loading={loading}
           manualInput={manualInput}
           mode={mode}
+          setMode={setMode}
           pdfFile={pdfFile}
           setImageFile={setImageFile}
           setManualInput={setManualInput}
@@ -808,6 +978,14 @@ function PatientSectionView(props) {
           structured={structured}
           onRunPrediction={onRunPrediction}
         />
+      </div>
+    );
+  }
+
+  if (activeSection === 'prediction_result') {
+    const modeResult = featureResults[mode] || result;
+    return (
+      <div className="doctor-input-stack">
         <StructuredPredictionResult
           activePatient={activePatient}
           imageFile={imageFile}
@@ -831,6 +1009,9 @@ function PatientSectionView(props) {
       />
     );
   }
+  if (activeSection === 'knowledge_graph') {
+    return <KnowledgeGraphPanel result={result} />;
+  }
   if (activeSection === 'recommendation') {
     return (
       <PatientRecommendation
@@ -852,6 +1033,7 @@ function InputWorkspace(props) {
     loading,
     manualInput,
     mode,
+    setMode,
     pdfFile,
     setImageFile,
     setManualInput,
@@ -860,10 +1042,32 @@ function InputWorkspace(props) {
     structured,
     onRunPrediction,
   } = props;
+  const modeOptions = [
+    { value: 'manual', label: 'Narrative Cycle AI' },
+    { value: 'columns', label: 'Clinical Signal Matrix' },
+    { value: 'pdf', label: 'Report Intelligence' },
+    { value: 'image', label: 'Embryo Image Lens' },
+  ];
 
   return (
     <section className="panel compact-panel">
       <h3>{modeTitle(mode)}</h3>
+      <div className="input-mode-picker">
+        <label htmlFor="input-source">Input source</label>
+        <div className="input-mode-chips" role="tablist" aria-label="Prediction input source">
+          {modeOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className={`input-mode-chip ${mode === option.value ? 'active' : ''}`}
+              onClick={() => setMode(option.value)}
+              aria-pressed={mode === option.value}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {mode === 'manual' && (
         <textarea
@@ -893,9 +1097,9 @@ function InputWorkspace(props) {
       {mode === 'image' && <FileDrop accept="image/*" file={imageFile} icon={ImageIcon} label="Upload scan, lab snapshot, or treatment image" onChange={setImageFile} />}
 
       <div className="input-actions">
-        <button className="btn-primary" type="button" onClick={onRunPrediction} disabled={loading}>
+        <Button className="btn-primary" loading={loading} type="button" onClick={onRunPrediction} disabled={loading}>
           {loading ? 'Analysing...' : 'Run Analysis'} <ArrowRight size={14} />
-        </button>
+        </Button>
         {error ? <p className="error">{error}</p> : <p>Prediction uses existing backend APIs and schema.</p>}
       </div>
     </section>
@@ -910,7 +1114,9 @@ function modeTitle(mode) {
 }
 
 function StructuredPredictionResult({ imageFile, loading, mode, probability, result }) {
-  const probabilityValue = typeof result?.probability === 'number' ? Math.round(result.probability * 100) : probability;
+  const probabilityValue = typeof result?.probability === 'number'
+    ? Math.round((result.probability <= 1 ? result.probability * 100 : result.probability))
+    : probability;
   return (
     <section className="panel feature-result-stack">
       <div className="feature-result-topline">
@@ -922,7 +1128,25 @@ function StructuredPredictionResult({ imageFile, loading, mode, probability, res
       ) : (
         <ResultCard result={result} loading={loading} />
       )}
-      <GraphView graphData={result?.graph} riskPaths={result?.risk_paths} criticalPath={result?.critical_path} explanation={result?.explanation} />
+    </section>
+  );
+}
+
+function KnowledgeGraphPanel({ result }) {
+  return (
+    <section className="panel compact-panel graph-priority-panel">
+      <h3>Knowledge Graph</h3>
+      <p>Interactive causal map for IVF factors, pathways, and predicted outcome confidence.</p>
+      {result ? (
+        <GraphView
+          graphData={result?.graph}
+          riskPaths={result?.risk_paths}
+          criticalPath={result?.critical_path}
+          explanation={result?.explanation}
+        />
+      ) : (
+        <div className="result-card">Run a prediction from Narrative, Clinical, Report, or Image sections to load graph reasoning.</div>
+      )}
     </section>
   );
 }
@@ -1060,38 +1284,73 @@ function TrackingPanel({ trackingDone, setTrackingDone, appointments, setAppoint
 }
 
 function PatientRecommendation({ validated, recommendations, dietItems = [], medicationItems = [], canValidate = false, hasResult = false, onValidate }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [checkedItems, setCheckedItems] = useState({});
+  const showContent = canValidate ? hasResult : validated;
+  const markDone = (key) => {
+    setCheckedItems((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+  const completedCount = Object.values(checkedItems).filter(Boolean).length;
+  const combinedMedication = [...medicationItems, ...dietItems];
+  const totalActionItems = recommendations.length + combinedMedication.length;
+
+  const renderActionList = (items, prefix) => (
+    <ul className="recommendations actionable-list">
+      {items.map((item, index) => {
+        const key = `${prefix}-${index}`;
+        const done = Boolean(checkedItems[key]);
+        return (
+          <li key={key} className={`actionable-item ${done ? 'done' : ''}`}>
+            <button type="button" onClick={() => markDone(key)} aria-pressed={done}>
+              <CheckCircle2 size={16} />
+            </button>
+            <span>{item}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <section className="panel compact-panel">
       <h3>Diet and Med Recommendations</h3>
       {canValidate ? (
         <button className="btn-primary" type="button" disabled={!hasResult} onClick={onValidate}>
-          {validated ? 'Recommendations Validated' : 'Validate Recommendations'}
+          {validated ? 'Recommendations Validated' : 'Validate and Release Recommendations'}
         </button>
       ) : null}
-      {validated ? (
+      {showContent ? (
         <>
-          <ul className="recommendations">
-            {recommendations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
-          </ul>
+          <div className="recommendation-toolbar">
+            <div className="recommendation-tabs" role="tablist" aria-label="Recommendation views">
+              <button type="button" className={`recommendation-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
+              <button type="button" className={`recommendation-tab ${activeTab === 'medication' ? 'active' : ''}`} onClick={() => setActiveTab('medication')}>Medication & Lifestyle</button>
+            </div>
+            <div className="recommendation-stats">
+              <span className="recommendation-stat">Actions: {totalActionItems}</span>
+              <span className="recommendation-stat">Completed: {completedCount}</span>
+            </div>
+          </div>
+
           <div className="recommendation-split">
-            <div>
-              <h4>Personalized Diet</h4>
-              <ul className="recommendations">
-                {(dietItems.length ? dietItems : ['Diet plan will appear after prediction.']).map((item, index) => <li key={`diet-${index}`}>{item}</li>)}
-              </ul>
-            </div>
-            <div>
-              <h4>Medication Guidance</h4>
-              <ul className="recommendations">
-                {(medicationItems.length ? medicationItems : ['Medication guidance will appear after prediction.']).map((item, index) => <li key={`med-${index}`}>{item}</li>)}
-              </ul>
-            </div>
+            {activeTab === 'overview' ? (
+              <div>
+                <h4>Clinical Priorities</h4>
+                {renderActionList(recommendations, 'rec')}
+              </div>
+            ) : null}
+            {activeTab === 'medication' ? (
+              <div>
+                <h4>Medication and Lifestyle Guidance</h4>
+                {renderActionList((combinedMedication.length ? combinedMedication : ['Guidance will appear after prediction.']), 'med')}
+              </div>
+            ) : null}
           </div>
         </>
       ) : (
         <div className="locked">
           <LockKeyhole size={24} />
-          <p>Waiting for doctor validation.</p>
+          <p>{canValidate ? 'Run a prediction to generate recommendations.' : 'Waiting for doctor validation.'}</p>
         </div>
       )}
     </section>
@@ -1232,20 +1491,23 @@ function ConnectDoctorCard() {
 
 function ServiceTile({ icon: Icon, title, text }) {
   return (
-    <article className="service-tile">
-      <Icon size={20} />
+    <article className="feature-card service-tile">
+      <div className="feature-icon">
+        <Icon size={22} />
+      </div>
       <h3>{title}</h3>
       <p>{text}</p>
+      <span className="feature-learn">Learn more</span>
     </article>
   );
 }
 
 function StepCard({ icon: Icon, title, text }) {
   return (
-    <article className="step-card">
-      <span><Icon size={22} /></span>
-      <h3>{title}</h3>
-      <p>{text}</p>
+    <article className="how-card step-card">
+      <div className="how-card-icon"><Icon size={24} /></div>
+      <h3 className="how-card-title">{title}</h3>
+      <p className="how-card-desc">{text}</p>
     </article>
   );
 }
@@ -1253,8 +1515,8 @@ function StepCard({ icon: Icon, title, text }) {
 function StatCard({ value, label }) {
   return (
     <article className="stat-card">
-      <strong>{value}</strong>
-      <span>{label}</span>
+      <strong className="stat-card-num">{value}</strong>
+      <span className="stat-card-label">{label}</span>
     </article>
   );
 }
@@ -1296,8 +1558,8 @@ function InteractiveHeroPanel() {
 
 function HeroImagePanel() {
   return (
-    <div className="hero-image-panel">
-      <img src={heroScrubsImage} alt="Clinical IVF care specialist with stethoscope" />
+    <div className="hero-image-panel hero-right-content">
+      <img className="hero-right-img" src={heroScrubsImage} alt="Clinical IVF care specialist with stethoscope" />
       <div className="hero-image-card image-card-top">
         <ShieldCheck size={18} />
         <span>
@@ -1316,26 +1578,29 @@ function HeroImagePanel() {
   );
 }
 
-function LoginVisual() {
+function LoginVisual({ role }) {
   return (
-    <div className="login-visual" aria-label="Secure medical login visual">
+    <div className="auth-visual-side login-visual" aria-label="Secure medical login visual">
       <img className="login-scrubs-image" src={loginStethoscopeImage} alt="Stethoscope on a clinical document" />
-      <div className="login-image-shade" />
-      <div className="login-data-card">
-        <HeartPulse size={20} />
-        <strong>Encrypted fertility workspace</strong>
-        <small>Prediction, reports, tracking, and validation stay role-gated.</small>
+      <div className="auth-visual-content">
+        <div className="auth-visual-title">{role === 'doctor' ? 'Doctor Workspace Security' : 'Patient Portal Security'}</div>
+        <div className="auth-visual-desc">Every record, recommendation, and message is encrypted and role-gated.</div>
       </div>
-    </div>
-  );
-}
-
-function DashboardPulse({ result, probability, isDoctor }) {
-  return (
-    <div className="dashboard-pulse" aria-label="Dashboard status visual">
-      <div className="role-status-icon">{isDoctor ? <Stethoscope size={24} /> : <UserRound size={24} />}</div>
-      <strong>{isDoctor ? 'Doctor workspace' : 'Patient workspace'}</strong>
-      <small>{result ? 'Analysis ready' : 'Awaiting analysis'}</small>
+      <div className="auth-feature-list">
+        <div className="auth-feature">
+          <div className="auth-feature-icon"><ShieldCheck size={15} /></div>
+          <div className="auth-feature-text"><strong>Doctor-gated outputs</strong><span>No AI content reaches patients without approval</span></div>
+        </div>
+        <div className="auth-feature">
+          <div className="auth-feature-icon"><BarChart3 size={15} /></div>
+          <div className="auth-feature-text"><strong>Full audit log</strong><span>Track every access, edit, and validation event</span></div>
+        </div>
+        <div className="auth-feature">
+          <div className="auth-feature-icon"><ImageIcon size={15} /></div>
+          <div className="auth-feature-text"><strong>Grad-CAM imaging</strong><span>Explainable AI for embryo classification</span></div>
+        </div>
+      </div>
+      <div className="auth-visual-footer">Progena IVF · HIPAA · ISO 27001 · Doctor validated · © 2026</div>
     </div>
   );
 }

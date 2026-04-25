@@ -1,3 +1,26 @@
+function normalizePredictionPayload(body) {
+  const prediction = body?.prediction || {};
+  const explanation = body?.explanation || {};
+  const artifacts = body?.artifacts || {};
+  const graph = body?.graph || { nodes: [], links: [], meta: {} };
+
+  return {
+    prediction: prediction.label || "Unknown",
+    probability: prediction.probability ?? 0,
+    confidence: prediction.confidence || "Unknown",
+    confidence_score: prediction.confidence_score ?? 0,
+    explanation,
+    graph,
+    risk_paths: body?.risk_paths || [],
+    critical_path: body?.critical_path || [],
+    original_image: artifacts.original_image || null,
+    gradcam_image: artifacts.gradcam_image || null,
+    gradcam_status: artifacts.gradcam_status || null,
+    gradcam_fallback: artifacts.gradcam_fallback || null,
+    meta: body?.meta || {},
+  };
+}
+
 export async function getPrediction(input) {
   const res = await fetch("http://localhost:8000/predict", {
     method: "POST",
@@ -12,7 +35,8 @@ export async function getPrediction(input) {
     throw new Error(payload.detail || "Backend request failed");
   }
 
-  return res.json();
+  const body = await res.json();
+  return normalizePredictionPayload(body);
 }
 
 export async function getPredictionFromPdf(file) {
@@ -29,7 +53,8 @@ export async function getPredictionFromPdf(file) {
     throw new Error(payload.detail || "Backend PDF request failed");
   }
 
-  return res.json();
+  const body = await res.json();
+  return normalizePredictionPayload(body);
 }
 
 export async function getPredictionFromImage(file) {
@@ -46,7 +71,8 @@ export async function getPredictionFromImage(file) {
     throw new Error(payload.detail || "Backend image request failed");
   }
 
-  return res.json();
+  const body = await res.json();
+  return normalizePredictionPayload(body);
 }
 
 export async function createAppointment(payload) {
@@ -94,4 +120,26 @@ export async function markNotificationRead(patientId, notificationId) {
     throw new Error(body.detail || "Failed to mark notification read");
   }
   return res.json();
+}
+
+export async function loginDemo({ email, password, role }) {
+  const res = await fetch("http://localhost:8000/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, role }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.detail || "Login failed");
+  }
+  return body;
+}
+
+export async function getLoginExampleEmail(role) {
+  const res = await fetch(`http://localhost:8000/auth/example?role=${encodeURIComponent(role)}`);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(body.detail || "Could not load example email");
+  }
+  return body;
 }

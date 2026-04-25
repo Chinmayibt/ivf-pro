@@ -162,8 +162,8 @@
     {
       "label": "Patient",
       "patient_id": "P001",
-      "predicted_prob": 0.3304,
-      "timestamp": "2026-04-25T00:45:47.686317",
+      "predicted_prob": 0.5175,
+      "timestamp": "2026-04-25T10:07:00.620508",
       "id": "Patient:P001"
     }
   ],
@@ -434,7 +434,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 0.6,
+      "value": 5.5,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -442,7 +442,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 35.0,
+      "value": 30.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -450,7 +450,15 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 23.4,
+      "value": 5.0,
+      "weight": 1.0,
+      "inv_weight": 0.0,
+      "source": "Patient:P001",
+      "target": "FSH"
+    },
+    {
+      "relationship": "HAS_FACTOR",
+      "value": 31.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -458,7 +466,7 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 7.2,
+      "value": 9.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
@@ -466,11 +474,27 @@
     },
     {
       "relationship": "HAS_FACTOR",
-      "value": 1.0,
+      "value": 3.0,
       "weight": 1.0,
       "inv_weight": 0.0,
       "source": "Patient:P001",
       "target": "Embryo Grade"
+    },
+    {
+      "relationship": "HAS_RISK",
+      "severity": "moderate",
+      "weight": 0.6,
+      "inv_weight": 0.4,
+      "source": "Patient:P001",
+      "target": "High BMI Risk"
+    },
+    {
+      "relationship": "PREDICTED",
+      "probability": 0.5175,
+      "weight": 0.5175261777878084,
+      "inv_weight": 0.4824738222121916,
+      "source": "Patient:P001",
+      "target": "IVF Success"
     },
     {
       "relationship": "HAS_RISK",
@@ -495,30 +519,6 @@
       "inv_weight": 0.7,
       "source": "Patient:P001",
       "target": "Thin Endometrium"
-    },
-    {
-      "relationship": "PREDICTED",
-      "probability": 0.3304,
-      "weight": 0.33043010751744234,
-      "inv_weight": 0.6695698924825577,
-      "source": "Patient:P001",
-      "target": "IVF Success"
-    },
-    {
-      "relationship": "HAS_FACTOR",
-      "value": 5.0,
-      "weight": 1.0,
-      "inv_weight": 0.0,
-      "source": "Patient:P001",
-      "target": "FSH"
-    },
-    {
-      "relationship": "HAS_RISK",
-      "severity": "moderate",
-      "weight": 0.6,
-      "inv_weight": 0.4,
-      "source": "Patient:P001",
-      "target": "High BMI Risk"
     }
   ]
 }

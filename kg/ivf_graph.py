@@ -63,6 +63,16 @@ INTERMEDIATES = [
     {"name": "Hormonal Environment", "pathway": "endocrine"},
 ]
 
+# Shared palette for node `label` (Factor / Condition / …) in exports and visualization.
+NODE_LABEL_COLORS = {
+    "Factor":       "#c9938a",
+    "Condition":    "#e57373",
+    "Intermediate": "#f0c07a",
+    "Outcome":      "#81c784",
+    "Patient":      "#7986cb",
+    "Unknown":      "#9e9e9e",
+}
+
 # (from, relationship, to, weight, clinical_basis)
 BASE_EDGES = [
     # AMH
@@ -341,27 +351,81 @@ class IVFGraph:
         return dict(sorted(pr.items(), key=lambda x: x[1], reverse=True))
 
     def get_subgraph_for_visualization(self, patient_id: str) -> dict:
-        nodes = set()
-        edges = []
-
-        # Get important paths
+        """
+        Subgraph used by the predict API: union of top risk paths + critical path.
+        Returns structured nodes and links for Cytoscape (human-readable names, colors, path flags).
+        """
         risk_paths = self.get_risk_paths(patient_id)
-        critical_path = self.get_critical_path()
+        critical_path = self.get_critical_path() or []
 
-        paths = risk_paths[:3]
+        paths_risk = risk_paths[:3]
+        paths_all = list(paths_risk)
         if critical_path:
-            paths.append(critical_path)
+            paths_all.append(critical_path)
 
-        for path in paths:
-            for i in range(len(path)):
-                nodes.add(path[i])
-                if i < len(path) - 1:
-                    edges.append((path[i], path[i + 1]))
+        critical_nodes = set(critical_path)
+        risk_nodes: set[str] = set()
+        for p in paths_risk:
+            risk_nodes.update(p)
 
-        return {
-            "nodes": list(nodes),
-            "edges": edges
-        }
+        critical_edge_set: set[tuple[str, str]] = set()
+        for i in range(len(critical_path) - 1):
+            critical_edge_set.add((critical_path[i], critical_path[i + 1]))
+
+        risk_edge_set: set[tuple[str, str]] = set()
+        for p in paths_risk:
+            for i in range(len(p) - 1):
+                risk_edge_set.add((p[i], p[i + 1]))
+
+        node_ids: set[str] = set()
+        for p in paths_all:
+            node_ids.update(p)
+
+        union_edges = critical_edge_set | risk_edge_set
+        links: list[dict] = []
+        for u, v in sorted(union_edges):
+            in_c = (u, v) in critical_edge_set
+            in_r = (u, v) in risk_edge_set
+            if in_c and in_r:
+                kind = "both"
+            elif in_c:
+                kind = "critical"
+            else:
+                kind = "risk"
+
+            weight = None
+            relationship = ""
+            clinical_basis = ""
+            if self.G.has_edge(u, v):
+                ed = self.G[u][v]
+                weight = round(float(ed.get("weight", 0.0)), 3)
+                relationship = ed.get("relationship", "") or ""
+                clinical_basis = ed.get("clinical_basis", "") or ""
+
+            links.append({
+                "source": u,
+                "target": v,
+                "kind": kind,
+                "weight": weight,
+                "relationship": relationship,
+                "clinical_basis": clinical_basis,
+            })
+
+        nodes_out: list[dict] = []
+        for nid in sorted(node_ids):
+            data = dict(self.G.nodes[nid]) if nid in self.G else {}
+            lbl = data.get("label", "Unknown")
+            name = data.get("name", nid)
+            nodes_out.append({
+                "id": nid,
+                "label": lbl,
+                "name": name,
+                "color": NODE_LABEL_COLORS.get(lbl, NODE_LABEL_COLORS["Unknown"]),
+                "onCriticalPath": nid in critical_nodes,
+                "onRiskPath": nid in risk_nodes,
+            })
+
+        return {"nodes": nodes_out, "links": links}
 
     def get_stats(self) -> dict:
         """Summary stats about the base graph."""
@@ -393,14 +457,6 @@ class IVFGraph:
         """
         G = self.get_patient_subgraph(patient_id) if patient_id else self.G
 
-        label_colors = {
-            "Factor":       "#c9938a",
-            "Condition":    "#e57373",
-            "Intermediate": "#f0c07a",
-            "Outcome":      "#81c784",
-            "Patient":      "#7986cb",
-        }
-
         nodes = []
         for node_id, data in G.nodes(data=True):
             label = data.get("label", "Unknown")
@@ -408,7 +464,7 @@ class IVFGraph:
                 "id":       node_id,
                 "label":    label,
                 "name":     data.get("name", node_id),
-                "color":    label_colors.get(label, "#aaa"),
+                "color":    NODE_LABEL_COLORS.get(label, "#aaa"),
                 **{k: v for k, v in data.items()
                    if k not in ("label", "name")}
             })

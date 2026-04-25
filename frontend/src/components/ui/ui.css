@@ -1,0 +1,160 @@
+.ui-btn {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ui-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ui-btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  box-shadow: 0 10px 24px rgba(20, 184, 166, 0.25);
+}
+
+.ui-btn--secondary {
+  color: #0f766e;
+  background: #ccfbf1;
+}
+
+.ui-btn--ghost {
+  color: #334155;
+  background: #fff;
+  border-color: #dbe4ee;
+}
+
+.ui-btn__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: uiSpin 0.8s linear infinite;
+}
+
+.ui-card {
+  border-radius: 16px;
+  border: 1px solid #dce7f0;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.ui-input,
+.ui-select,
+.ui-textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #d8e4ee;
+  background: #fff;
+  color: #0f172a;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.ui-input:focus,
+.ui-select:focus,
+.ui-textarea:focus {
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
+}
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.ui-badge--success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ui-badge--warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ui-badge--danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.ui-skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg, #edf2f7 25%, #f8fafc 50%, #edf2f7 75%);
+  background-size: 200% 100%;
+  animation: uiShimmer 1.4s infinite;
+}
+
+.ui-meter-ring {
+  position: relative;
+  width: 132px;
+  height: 132px;
+}
+
+.ui-meter-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ui-meter-ring__bg,
+.ui-meter-ring__value {
+  fill: none;
+  stroke-width: 8;
+}
+
+.ui-meter-ring__bg {
+  stroke: #e2e8f0;
+}
+
+.ui-meter-ring__value {
+  stroke: #14b8a6;
+  stroke-linecap: round;
+  stroke-dasharray: 327;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.ui-meter-ring__center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.ui-meter-ring__center strong {
+  font-size: 1.45rem;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.ui-meter-ring__center span {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@keyframes uiSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes uiShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}

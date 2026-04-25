@@ -32,8 +32,12 @@ def _default_image_response(
     gradcam_image: str | None = None,
 ) -> Dict[str, Any]:
     return {
+        "label": prediction,
+        "final_probability": float(confidence),
         "prediction": prediction,
         "confidence": round(float(confidence), 3),
+        "confidence_score": round(float(confidence), 3),
+        "data_quality_confidence": "High",
         "explanation": note,
         "probability": float(confidence),
         "original_image": original_image,
@@ -42,6 +46,7 @@ def _default_image_response(
         "graph": {"nodes": [], "links": []},
         "risk_paths": [],
         "critical_path": [],
+        "patient_id": "P001",
     }
 
 

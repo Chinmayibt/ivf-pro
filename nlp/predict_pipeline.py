@@ -14,6 +14,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 from nlp.extractor import process_input
 from nlp.llm_explainer import generate_llm_explanation
+from nlp.graph_insights import enrich_visualization_graph
 from kg.ivf_graph import IVFGraph
 
 
@@ -852,7 +853,12 @@ def predict(source):
     # ----------------------------
     # KNOWLEDGE GRAPH INTEGRATION
     # ----------------------------
-    patient_id = "P001"   # later you can make dynamic
+    patient_id = str(
+        features.get("patient_id")
+        or features.get("patientId")
+        or features.get("id")
+        or "P001"
+    )
     graph.create_patient_subgraph(
         patient_id=patient_id,
         features=features,
@@ -862,6 +868,16 @@ def predict(source):
     risk_paths = graph.get_risk_paths(patient_id)
     critical_path = graph.get_critical_path()
     graph.save(f"data/graph_{patient_id}.json")
+
+    raw_viz = graph.get_subgraph_for_visualization(patient_id)
+    enriched_graph = enrich_visualization_graph(
+        graph,
+        raw_viz,
+        features,
+        rule_based_explanation,
+        float(final_prob),
+        float(confidence_score),
+    )
 
     return {
         "final_probability": float(final_prob),
@@ -875,7 +891,9 @@ def predict(source):
         "explanation": explanation,
         "risk_paths": risk_paths,
         "critical_path": critical_path,
-        "features": features
+        "features": features,
+        "graph": enriched_graph,
+        "patient_id": patient_id,
     }
 
 

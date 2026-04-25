@@ -1,0 +1,39 @@
+{
+  "users": [
+    {
+      "email": "doctor@progena.ai",
+      "password": "progenaivf",
+      "role": "doctor",
+      "display_name": "Dr. Neri Kwang",
+      "department": "Reproductive Medicine"
+    },
+    {
+      "email": "dr.singh@progena.demo",
+      "password": "demo123",
+      "role": "doctor",
+      "display_name": "Dr. Anaya Singh",
+      "department": "Embryology"
+    },
+    {
+      "email": "patient@progena.ai",
+      "password": "progenaivf",
+      "role": "patient",
+      "display_name": "Ananya Rao",
+      "patient_id": "P-1042"
+    },
+    {
+      "email": "meera@patient.demo",
+      "password": "cycle2026",
+      "role": "patient",
+      "display_name": "Meera Shah",
+      "patient_id": "P-1188"
+    },
+    {
+      "email": "priya@patient.demo",
+      "password": "transfer1",
+      "role": "patient",
+      "display_name": "Priya Nair",
+      "patient_id": "P-1214"
+    }
+  ]
+}
