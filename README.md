@@ -1,113 +1,258 @@
-# IVF Decision Support and Prediction Platform
+# 🧬 Progena — Explainable IVF Intelligence Platform
 
-A full-stack IVF assistance project that combines:
-- a FastAPI backend for prediction, explanation, auth, appointments, and notifications
-- a React + Vite frontend for interactive clinician/patient workflows
-- knowledge-graph based relationship views for risk and treatment context
+From prediction -> to explanation -> to decision.
 
-## What This Project Provides
+## 🚀 Overview
 
-- Multi-input prediction APIs:
-  - structured/manual clinical input
-  - PDF upload
-  - embryo/lab image upload (with Grad-CAM artifacts when available)
-- Rich explanation payloads:
-  - summary and key drivers
-  - positive and negative factors
-  - practical improvement guidance
-- Demo authentication for doctor and patient roles
-- Appointment creation and per-patient notification tracking
-- Graph payload support for front-end visualization of IVF-related entities and links
+Progena is an AI-powered IVF decision support platform designed to make complex fertility data understandable, explainable, and actionable.
 
-## Tech Stack
+Unlike traditional systems that output a single number:
 
-- **Backend:** Python, FastAPI, Uvicorn, scikit-learn, PyTorch ecosystem, NLP/ML utilities
-- **Frontend:** React, Vite, Cytoscape, Framer Motion
-- **Data/Artifacts:** JSON stores under `data/`, model artifacts under `model/` and `models/`
+`Success rate: 54%`
 
-## Repository Structure
+Progena answers:
 
-- `nlp/` - API, prediction pipeline, explainability, auth, appointments
-- `kg/` - IVF graph building and graph-related utilities
-- `frontend/` - React application (UI, API client, graph and result components)
-- `data/` - graph and appointment stores, plus raw/processed data files
-- `model/`, `models/` - trained model assets and metrics
+- ❓ Why this prediction?
+- ⚖️ What factors are helping or hurting?
+- 📈 What can be improved?
 
-## Prerequisites
+It transforms IVF from a black-box prediction problem into a transparent decision-making experience for both doctors and patients.
 
-- Python 3.10+ (recommended)
-- Node.js 18+ and npm
+## 🎯 Problem Statement
 
-## Backend Setup (FastAPI)
+IVF (In Vitro Fertilization) decision-making is:
 
-1. Create and activate a virtual environment:
+- Data-intensive
+- Clinically complex
+- Emotionally sensitive
+
+### Existing Challenges
+
+- ❌ Black-box AI predictions
+- ❌ No interpretability
+- ❌ No patient-friendly explanation
+- ❌ Disconnected clinical data sources
+
+## 💡 Solution
+
+Progena integrates:
+
+- 🧠 AI prediction models
+- 🔍 Explainable AI insights
+- 🧬 Embryo image analysis
+- 🌐 Knowledge graph visualization
+- 👩‍⚕️ Doctor-patient workflow system
+
+👉 Result: A complete IVF intelligence platform, not just a prediction tool.
+
+## ✨ Core Features
+
+### 🧾 1. Multi-Modal Prediction System
+
+Supports multiple input types:
+
+- Structured clinical data
+- 📄 PDF medical reports
+- 🖼️ Embryo / lab images
+
+Includes:
+
+- Classification (pregnancy vs non-pregnancy)
+- Confidence scoring
+- Model-backed inference
+
+### 🧠 2. Explainable AI Layer
+
+Each prediction includes:
+
+- 📌 Key contributing factors
+- ✅ Positive influences
+- ⚠️ Negative influences
+- 💡 Actionable improvement suggestions
+
+👉 Makes AI outputs interpretable and trustworthy.
+
+### 🧬 3. Embryo Image Intelligence
+
+- Image-based embryo classification
+- Visual explainability using Grad-CAM
+- Highlights regions influencing prediction
+
+### 🌐 4. Knowledge Graph Visualization
+
+Interactive IVF relationship mapping:
+
+- Hormones ↔ Embryo quality
+- Age ↔ Success probability
+- Treatment ↔ Outcome
+
+Built using:
+
+- Cytoscape.js
+
+👉 Converts complex medical relationships into intuitive visual graphs.
+
+### 👩‍⚕️ 5. Role-Based Workflow System
+
+**Doctor**
+
+- View patient predictions
+- Analyze risk factors
+- Manage appointments
+
+**Patient**
+
+- View results
+- Understand explanations
+- Track notifications
+
+### 🔔 6. Appointment & Notification System
+
+- Appointment scheduling
+- Patient-specific notifications
+- Status tracking
+
+## 🖥️ Demo Preview
+
+Current dashboard preview:
+
+![Progena Dashboard Preview](photos/image2.png)
+
+👉 Recommended:
+
+- Add GIF of prediction flow
+- Add graph interaction preview
+
+## 🏗️ System Architecture
+
+```text
+Frontend (React + Vite)
+        ↓
+FastAPI Backend (API + Logic)
+        ↓
+ML Models (Prediction + Explainability)
+        ↓
+Data Layer (JSON + Model Artifacts)
+```
+
+## 🧪 Tech Stack
+
+### Frontend
+
+- React (Vite)
+- Cytoscape.js (Graph visualization)
+- Framer Motion (Animations)
+- Lucide Icons
+
+### Backend
+
+- FastAPI
+- Uvicorn
+- Python ML ecosystem
+
+### AI / ML
+
+- scikit-learn
+- PyTorch
+- Grad-CAM
+- NLP utilities
+
+### Data
+
+- JSON-based storage
+- Model artifacts (`model/`, `models/`)
+
+## 📂 Project Structure
+
+```text
+├── nlp/         → APIs, prediction, explainability, auth
+├── kg/          → Knowledge graph logic
+├── frontend/    → React application
+├── data/        → JSON storage (appointments, graph)
+├── model/       → ML models
+├── models/      → Additional artifacts
+```
+
+## ⚙️ Setup Instructions
+
+### 🔹 Backend Setup (FastAPI)
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-```
 
-2. Install Python dependencies:
-
-```bash
 pip install -r requiremnts.txt
-```
 
-3. Start the backend:
-
-```bash
 uvicorn nlp.api:app --reload --port 8000
 ```
 
-API base URL: `http://localhost:8000`
+API Base URL:
 
-Interactive docs:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+- `http://localhost:8000`
 
-## Frontend Setup (React + Vite)
+Docs:
 
-1. Install dependencies:
+- `/docs` -> Swagger UI
+- `/redoc` -> ReDoc
+
+### 🔹 Frontend Setup (React + Vite)
 
 ```bash
 cd frontend
 npm install
-```
-
-2. Start the frontend:
-
-```bash
 npm run dev
 ```
 
-Default frontend URL: `http://localhost:5173`
+Frontend runs at:
 
-## Core API Endpoints
+- `http://localhost:5173`
 
-- `POST /predict` - prediction from structured/manual input
-- `POST /predict/pdf` - prediction from PDF file upload
-- `POST /predict/image` - prediction from image upload
-- `POST /auth/login` - demo login (`doctor` or `patient`)
-- `GET /auth/example` - fetch example email for a role
-- `GET /appointments` - list appointments (optional `patient_id`)
-- `POST /appointments` - create appointment
-- `GET /notifications` - list notifications for a patient
-- `POST /notifications/read` - mark a notification as read
+## 🔌 API Endpoints
 
-## Development Notes
+| Endpoint | Description |
+| --- | --- |
+| `POST /predict` | Structured input prediction |
+| `POST /predict/pdf` | PDF-based prediction |
+| `POST /predict/image` | Image-based prediction |
+| `POST /auth/login` | Demo login |
+| `GET /appointments` | Fetch appointments |
+| `POST /appointments` | Create appointment |
+| `GET /notifications` | Get notifications |
+| `POST /notifications/read` | Mark notification read |
 
-- Frontend API calls currently target `http://localhost:8000` directly.
-- Appointment and graph data are persisted in JSON files under `data/`.
-- Keep model files and large binary artifacts out of commits unless needed.
-- `requiremnts.txt` is intentionally referenced by current scripts; keep naming consistent unless you plan a coordinated rename.
+## 🔄 Suggested Run Flow
 
-## Suggested Run Order
+1. Start backend
+2. Start frontend
+3. Open UI
+4. Run prediction
+5. Explore explanation + graph
 
-1. Start backend (`uvicorn ... --port 8000`)
-2. Start frontend (`npm run dev` inside `frontend/`)
-3. Open the frontend in browser and run a prediction flow
-4. Inspect API docs at `/docs` for endpoint-level testing
+## 🌍 Real-World Impact
 
-## License
+Progena enables:
 
-No license file is currently declared in this repository.
+- 👩‍⚕️ Doctors -> Better clinical decisions
+- 👩 Patients -> Clear understanding of IVF outcomes
+- 🏥 Clinics -> Improved workflow efficiency
+
+### Key Benefits
+
+- Reduces uncertainty
+- Builds trust in AI
+- Improves treatment planning
+
+## 🔮 Future Enhancements
+
+- 🧬 3D IVF visualization (interactive embryo implantation)
+- 🤖 AI agent for guided explanations
+- ☁️ Cloud deployment
+- 📱 Mobile support
+- 📊 Advanced analytics dashboard
+
+## 🏆 Why Progena Stands Out
+
+- Combines AI + Explainability + Visualization
+- Focuses on human-centered healthcare
+- Bridges technical + clinical domains
+- Designed as a complete product system
